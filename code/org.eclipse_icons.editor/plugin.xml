@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            name="Eclipse Icons Editor"
+            id="org.eclipse_icons.editor">
+      </category>
+      <view
+            allowMultiple="true"
+            category="org.eclipse_icons.editor"
+            class="org.eclipse_icons.editor.views.EclipseIconsView"
+            icon="icons/view.gif"
+            id="org.eclipse_icons.editor.views.EclipseIconsEditor"
+            name="Eclipse Icons Editor">
+      </view>
+   </extension>
+
+</plugin>
