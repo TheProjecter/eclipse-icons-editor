@@ -1,0 +1,51 @@
+<project name="org.eclipse_icons.editor" default="build-updatesite">
+
+	<property name="repo.name" value="eclipse-icons-editor" />
+	<property name="relative.repository.dir" value="../../../${repo.name}/site/org.eclipse_icons.editor.site" />
+	<property name="repository.dir" location="${relative.repository.dir}"/>
+	<property name="tmpdir" value="${java.io.tmpdir}/${ant.project.name}" />
+	<property file="${basedir}/build.properties"/>
+
+	<target name="build-updatesite">
+
+		<!-- Moving artifacts and compiled code -->
+		<delete dir="${tmpdir}" />
+		<copy todir="${tmpdir}" overwrite="true">
+			<fileset dir="${basedir}" includes="${bin.includes}" />
+			<fileset dir="${basedir}/${output..}" />
+		</copy>
+
+		<!-- Manifest modification for correct version -->
+	    <loadproperties srcfile="${tmpdir}/META-INF/MANIFEST.MF">
+	    	<filterchain>
+            	<linecontainsregexp>
+                	<regexp pattern="Bundle-Version: \d+.\d+.\d+.qualifier" />
+            	</linecontainsregexp>
+	    		<tokenfilter>
+	    			<replacestring from=".qualifier" to=""/>
+	    		</tokenfilter>
+	    	</filterchain>
+	    </loadproperties>
+
+	    <tstamp>
+	    	<format property="qualifier" pattern="yyyyMMddhhmm"/>
+	    </tstamp>
+
+		<eclipse.versionReplacer path="${tmpdir}" version="${Bundle-Version}.${qualifier}" />
+
+		<!-- Publishing the plugin -->
+		<delete>
+			<fileset dir="${repository.dir}">
+				<exclude name=".project"/>
+			</fileset>
+		</delete>
+
+		<p2.publish.featuresAndBundles repository="file:${repository.dir}"
+			repositoryName="${ant.project.name} - repository"
+			append="false">
+			<bundles dir="${tmpdir}"/>
+		</p2.publish.featuresAndBundles>
+
+	</target>
+
+</project>
