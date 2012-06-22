@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?metadataRepository version='1.1.0'?>
+<repository name='org.eclipse_icons.editor - repository' type='org.eclipse.equinox.internal.p2.metadata.repository.LocalMetadataRepository' version='1'>
+  <properties size='2'>
+    <property name='p2.timestamp' value='1340382124755'/>
+    <property name='p2.compressed' value='false'/>
+  </properties>
+  <units size='1'>
+    <unit id='org.eclipse_icons.editor' version='1.0.0.201206220622'>
+      <update id='org.eclipse_icons.editor' range='[0.0.0,1.0.0.201206220622)' severity='0'/>
+      <properties size='3'>
+        <property name='org.eclipse.equinox.p2.name' value='Eclipse Icons Editor'/>
+        <property name='org.eclipse.equinox.p2.provider' value='Jabier Martinez'/>
+        <property name='org.eclipse.equinox.p2.type.group' value='true'/>
+      </properties>
+      <provides size='3'>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='org.eclipse_icons.editor' version='1.0.0.201206220622'/>
+        <provided namespace='osgi.bundle' name='org.eclipse_icons.editor' version='1.0.0.201206220622'/>
+        <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
+      </provides>
+      <requires size='4'>
+        <required namespace='osgi.bundle' name='org.eclipse.ui' range='0.0.0'/>
+        <required namespace='osgi.bundle' name='org.eclipse.core.runtime' range='0.0.0'/>
+        <required namespace='java.package' name='org.eclipse.core.resources' range='0.0.0'/>
+        <required namespace='java.package' name='org.eclipse.ui.dialogs' range='0.0.0'/>
+      </requires>
+      <artifacts size='1'>
+        <artifact classifier='osgi.bundle' id='org.eclipse_icons.editor' version='1.0.0.201206220622'/>
+      </artifacts>
+      <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+      <touchpointData size='1'>
+        <instructions size='2'>
+          <instruction key='manifest'>
+            Bundle-SymbolicName: org.eclipse_icons.editor; singleton:=true&#xA;Bundle-Version: 1.0.0.201206220622&#xA;
+          </instruction>
+          <instruction key='zipped'>
+            true
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+  </units>
+</repository>
