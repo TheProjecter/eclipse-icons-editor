@@ -27,6 +27,7 @@ import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse_icons.editor.Activator;
+import org.eclipse_icons.editor.crawlers.CrawlEclipseIconsAction;
 import org.eclipse_icons.editor.utils.image.Utils;
 import org.eclipse_icons.editor.utils.ui.UIUtils;
 import org.eclipse_icons.editor.utils.ui.WorkspaceContainerForFilesDialog;
@@ -124,6 +125,7 @@ public class EclipseIconsView extends ViewPart {
 	private void contributeToActionBars() {
 		IActionBars bars = getViewSite().getActionBars();
 		fillLocalToolBar(bars.getToolBarManager());
+		fillLocalPullDown(bars.getMenuManager());
 	}
 
 	private void fillContextMenu(IMenuManager manager) {
@@ -136,6 +138,10 @@ public class EclipseIconsView extends ViewPart {
 		manager.add(selectBaseIconAction);
 		manager.add(new Separator());
 		manager.add(saveAction);
+	}
+	
+	private void fillLocalPullDown(IMenuManager manager) {
+		manager.add(new CrawlEclipseIconsAction());
 	}
 
 	private String[] selectIcons(){
