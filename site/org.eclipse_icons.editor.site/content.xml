@@ -2,19 +2,19 @@
 <?metadataRepository version='1.1.0'?>
 <repository name='org.eclipse_icons.editor - repository' type='org.eclipse.equinox.internal.p2.metadata.repository.LocalMetadataRepository' version='1'>
   <properties size='2'>
-    <property name='p2.timestamp' value='1341149630413'/>
+    <property name='p2.timestamp' value='1341438414089'/>
     <property name='p2.compressed' value='false'/>
   </properties>
   <units size='1'>
-    <unit id='org.eclipse_icons.editor' version='1.0.0.201207010333'>
-      <update id='org.eclipse_icons.editor' range='[0.0.0,1.0.0.201207010333)' severity='0'/>
+    <unit id='org.eclipse_icons.editor' version='1.0.0.201207041146'>
+      <update id='org.eclipse_icons.editor' range='[0.0.0,1.0.0.201207041146)' severity='0'/>
       <properties size='2'>
         <property name='org.eclipse.equinox.p2.name' value='Eclipse Icons Editor'/>
         <property name='org.eclipse.equinox.p2.provider' value='Jabier Martinez'/>
       </properties>
       <provides size='3'>
-        <provided namespace='org.eclipse.equinox.p2.iu' name='org.eclipse_icons.editor' version='1.0.0.201207010333'/>
-        <provided namespace='osgi.bundle' name='org.eclipse_icons.editor' version='1.0.0.201207010333'/>
+        <provided namespace='org.eclipse.equinox.p2.iu' name='org.eclipse_icons.editor' version='1.0.0.201207041146'/>
+        <provided namespace='osgi.bundle' name='org.eclipse_icons.editor' version='1.0.0.201207041146'/>
         <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='bundle' version='1.0.0'/>
       </provides>
       <requires size='6'>
@@ -26,13 +26,13 @@
         <required namespace='java.package' name='org.eclipse.ui.ide' range='0.0.0'/>
       </requires>
       <artifacts size='1'>
-        <artifact classifier='osgi.bundle' id='org.eclipse_icons.editor' version='1.0.0.201207010333'/>
+        <artifact classifier='osgi.bundle' id='org.eclipse_icons.editor' version='1.0.0.201207041146'/>
       </artifacts>
       <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
       <touchpointData size='1'>
         <instructions size='2'>
           <instruction key='manifest'>
-            Bundle-SymbolicName: org.eclipse_icons.editor; singleton:=true&#xA;Bundle-Version: 1.0.0.201207010333&#xA;
+            Bundle-SymbolicName: org.eclipse_icons.editor; singleton:=true&#xA;Bundle-Version: 1.0.0.201207041146&#xA;
           </instruction>
           <instruction key='zipped'>
             true
