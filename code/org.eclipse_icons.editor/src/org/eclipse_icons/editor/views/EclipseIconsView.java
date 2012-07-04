@@ -1,7 +1,10 @@
 package org.eclipse_icons.editor.views;
 
 import java.io.File;
+import java.util.List;
 
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
@@ -11,9 +14,9 @@ import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.ITableLabelProvider;
+import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -25,24 +28,32 @@ import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.dialogs.ContainerSelectionDialog;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse_icons.editor.Activator;
 import org.eclipse_icons.editor.crawlers.CrawlEclipseIconsAction;
 import org.eclipse_icons.editor.utils.image.Utils;
 import org.eclipse_icons.editor.utils.ui.UIUtils;
-import org.eclipse_icons.editor.utils.ui.WorkspaceContainerForFilesDialog;
+
 
 /**
  * Eclipse Icons Editor View
  * @author Jabier Martinez
  */
 public class EclipseIconsView extends ViewPart {
-
-	private static final String NEW_ICON_PNG = "newIcon.png";
+	
+	public EclipseIconsView(){
+		super();
+		String defaultIconsPath = UIUtils.getFileAbsolutePathFromPlugin("icons/default");
+		String baseDefaultPath = defaultIconsPath + "/base.png";
+		String overlayDefaultPath = defaultIconsPath + "/overlay.png";
+		baseIcons = new String[]{ baseDefaultPath };
+		overlayIcons = new String[]{ overlayDefaultPath };
+	}
 
 	public static final String ID = "org.eclipse_icons.editor.views.EclipseIconsEditor";
 
-	private TableViewer viewer;
+	private TreeViewer viewer;
 	private Action selectOverlayIconAction;
 	private Action selectBaseIconAction;
 	private Action saveAction;
@@ -53,8 +64,13 @@ public class EclipseIconsView extends ViewPart {
 	private Image currentImage = null;
 	
 	private int outputFormat = SWT.IMAGE_PNG;
-	 
-	class ViewContentProvider implements IStructuredContentProvider {
+	
+	class ViewContentProvider implements IStructuredContentProvider, 
+	   ITreeContentProvider {
+		
+
+		private IconCategory invisibleRoot;
+		
 		public void inputChanged(Viewer v, Object oldInput, Object newInput) {
 		}
 		public void dispose() {
@@ -64,49 +80,90 @@ public class EclipseIconsView extends ViewPart {
 			}
 		}
 		public Object[] getElements(Object parent) {
-			return new String[] { NEW_ICON_PNG };
+			if (parent.equals(getViewSite())) {
+				if (invisibleRoot==null) initialize();
+				return getChildren(invisibleRoot);
+			}
+			return getChildren(parent);
+		}
+		
+		public Object getParent(Object child) {
+			if (child instanceof Icon) {
+				return ((Icon)child).getParent();
+			}
+			return null;
+		}
+		public Object [] getChildren(Object parent) {
+			if (parent instanceof IconCategory) {
+				return ((IconCategory)parent).getIcons();
+			}
+			return new Object[0];
+		}
+		public boolean hasChildren(Object parent) {
+			if (parent instanceof IconCategory)
+				return ((IconCategory)parent).hasIcons();
+			return false;
+		}
+		
+		private void initialize() {
+			IconCategory centeredOverlayCategory = new IconCategory(IconCategory.CENTERED_OVERLAY.replaceAll(" ", "_"), IconCategory.CENTERED_OVERLAY);
+			Icon iconCenteredOverlay = new Icon(Icon.CENTERED_OVERLAY_ICON,"base_overlay");
+			centeredOverlayCategory.addIcon(iconCenteredOverlay);
+			
+			IconCategory cornersOverlayCategory = new IconCategory(IconCategory.CORNERS_OVERLAY,IconCategory.CORNERS_OVERLAY);
+			Icon iconCorners1Overlay = new Icon(Icon.TOP_LEFT_CORNER_OVERLAY_ICON,"base_top_left_corner_overlay");
+			Icon iconCorners2Overlay = new Icon(Icon.TOP_RIGHT_CORNER_OVERLAY_ICON,"base_top_right_corner_overlay");
+			Icon iconCorners3Overlay = new Icon(Icon.BOTTOM_RIGHT_CORNER_OVERLAY_ICON,"base_bottom_right_corner_overlay");
+			Icon iconCorners4Overlay = new Icon(Icon.BOTTOM_LEFT_CORNER_OVERLAY_ICON,"base_bottom_left_corner_overlay");
+			cornersOverlayCategory.addIcon(iconCorners1Overlay);
+			cornersOverlayCategory.addIcon(iconCorners2Overlay);
+			cornersOverlayCategory.addIcon(iconCorners3Overlay);
+			cornersOverlayCategory.addIcon(iconCorners4Overlay);
+			
+			IconCategory sidesOverlayCategory = new IconCategory(IconCategory.SIDES_OVERLAY,IconCategory.SIDES_OVERLAY);
+			Icon iconSide1Overlay = new Icon(Icon.TOP_SIDE_OVERLAY_ICON,"base_top_side_overlay");
+			Icon iconSide2Overlay = new Icon(Icon.RIGHT_SIDE_OVERLAY_ICON,"base_right_side_overlay");
+			Icon iconSide3Overlay = new Icon(Icon.BOTTOM_SIDE_OVERLAY_ICON,"base_bottom_side_overlay");
+			Icon iconSide4Overlay = new Icon(Icon.LEFT_SIDE_OVERLAY_ICON,"base_left_side_overlay");
+			sidesOverlayCategory.addIcon(iconSide1Overlay);
+			sidesOverlayCategory.addIcon(iconSide2Overlay);
+			sidesOverlayCategory.addIcon(iconSide3Overlay);
+			sidesOverlayCategory.addIcon(iconSide4Overlay);
+		
+			invisibleRoot = new IconCategory("","");
+			invisibleRoot.addIcon(centeredOverlayCategory);
+			invisibleRoot.addIcon(cornersOverlayCategory);
+			invisibleRoot.addIcon(sidesOverlayCategory);
 		}
 	}
-	class ViewLabelProvider extends LabelProvider implements ITableLabelProvider {
-		public String getColumnText(Object obj, int index) {
-			return getText(obj.toString());
-		}
-		public Image getColumnImage(Object obj, int index) {
-			return getImage(obj);
-		}
+
+	
+	class ViewLabelProvider extends LabelProvider {
 		public Image getImage(Object obj) {
-			Image image = null;
-			if (baseIcons != null && baseIcons.length>0 && overlayIcons != null && overlayIcons.length>0){
-				image = Utils.createOverlapedImage(overlayIcons[0],baseIcons[0]);
-			} else if (baseIcons != null && baseIcons.length>0){
-				image = new Image(Display.getCurrent(), baseIcons[0]);
-			} else if (overlayIcons != null && overlayIcons.length>0){
-				image = new Image(Display.getCurrent(), overlayIcons[0]);
+			if (obj instanceof IconCategory){
+				return ((IconCategory)obj).getImage();
+			} else { // It is an Icon
+				return ((Icon)obj).processImage(baseIcons,overlayIcons);
 			}
-			if (image==null){
-				// It is needed to create a copy because we cannot dispose a shared image
-				image = new Image(Display.getCurrent(),PlatformUI.getWorkbench().
-					getSharedImages().getImage(ISharedImages.IMG_OBJ_ELEMENT),SWT.IMAGE_COPY);
+		}
+		public String getText(Object obj) {
+			if (obj instanceof IconCategory){
+				return super.getText(obj);
+			} else {
+				return computeIconName((Icon)obj);
 			}
-			if (currentImage != image){
-				if (currentImage != null){
-					currentImage.dispose();
-				}
-				currentImage = image;
-			}
-			
-			return image;
 		}
 	}
 
 	public void createPartControl(Composite parent) {
-		viewer = new TableViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+		viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 		viewer.setContentProvider(new ViewContentProvider());
  		viewer.setLabelProvider(new ViewLabelProvider());
 		viewer.setInput(getViewSite());
 		createActions();
 		createContextMenu();
 		contributeToActionBars();
+		viewer.expandAll();
 	}
 
 	private void createContextMenu() {
@@ -144,11 +201,15 @@ public class EclipseIconsView extends ViewPart {
 		manager.add(new CrawlEclipseIconsAction());
 	}
 
-	private String[] selectIcons(){
+	private String[] selectIcons(String type){
         FileDialog fd = new FileDialog(Display.getCurrent().getActiveShell(), SWT.OPEN);
-        fd.setText("Select Image");
+        fd.setText("Select "+ type +" Image");
         String[] filterExt = { "*.gif", "*.png", "*.bmp", "*.jpg" };
-        fd.setFilterPath(UIUtils.getFileAbsolutePathFromPlugin("gallery"));
+        if (type.equalsIgnoreCase("base")){
+        	fd.setFilterPath(UIUtils.getFileAbsolutePathFromPlugin("gallery/base"));
+        } else if (type.equalsIgnoreCase("overlay")){
+        	fd.setFilterPath(UIUtils.getFileAbsolutePathFromPlugin("gallery/overlay"));
+        }
         fd.setFilterExtensions(filterExt);
         String selection = fd.open();
         if (selection != null) {
@@ -168,7 +229,7 @@ public class EclipseIconsView extends ViewPart {
 	private void createActions() {
 		selectOverlayIconAction = new Action() {
 			public void run() {
-				String[] selected = selectIcons();
+				String[] selected = selectIcons("Overlay");
 				if (selected!=null){
 					overlayIcons = selected;
 					viewer.refresh();
@@ -182,7 +243,7 @@ public class EclipseIconsView extends ViewPart {
 		
 		selectBaseIconAction = new Action() {
 			public void run() {
-				String[] selected = selectIcons();
+				String[] selected = selectIcons("Base");
 				if (selected!=null){
 					baseIcons = selected;
 					viewer.refresh();
@@ -198,20 +259,29 @@ public class EclipseIconsView extends ViewPart {
 		saveAction = new Action() {
 			public void run() {
 				IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+				// No selection
 				if (selection==null || selection.isEmpty()){
 					MessageDialog.openInformation(viewer.getControl().getShell(),
 					"Eclipse Icons Editor",
-					"No icon was selected");
+					"No icons were selected");
 				} else {
-					String[] resourceFullPath = WorkspaceContainerForFilesDialog
-							.open("Select container folder",new String[] { NEW_ICON_PNG });
-					if (resourceFullPath != null && resourceFullPath[0] != null) {
-						try {
-							Utils.saveIconToFile(currentImage, resourceFullPath[0], outputFormat);
-							UIUtils.refreshWorkspace(resourceFullPath[0]);
-						} catch (Exception ex) {
-							ex.printStackTrace();
+					// Select output folder
+					String path;
+					ContainerSelectionDialog dialog = new ContainerSelectionDialog(
+							viewer.getControl().getShell(), ResourcesPlugin
+									.getWorkspace().getRoot(), false, "Select output folder");
+					if (dialog.open() == ContainerSelectionDialog.OK) {
+						// Dialog OK
+						Object[] result = dialog.getResult();
+						path = (((Path) result[0]).toString());
+						String workspacePath = UIUtils.getWorkspacePath().toOSString();
+						path = workspacePath + path;
+						@SuppressWarnings("unchecked")
+						List<Icon> selectionList = selection.toList();
+						for (Icon selectedElement : selectionList){
+							save(selectedElement, path);
 						}
+						UIUtils.refreshWorkspace(path);		
 					}
 				}
 			}
@@ -225,5 +295,36 @@ public class EclipseIconsView extends ViewPart {
 
 	public void setFocus() {
 		viewer.getControl().setFocus();
+	}
+	
+	private void save(Icon icon, String outputPath){
+		if (icon instanceof IconCategory){
+			for (Icon child : ((IconCategory)icon).getIcons()){
+				save(child,outputPath);
+			}
+		} else {
+			try {
+				// Create new icon absolute path
+				String newIconAbsPath = computeIconName(icon);
+				newIconAbsPath = outputPath + File.separator + newIconAbsPath + "." + Utils.getExtension(outputFormat);
+				// Save it
+				Utils.saveIconToFile(icon.processImage(baseIcons, overlayIcons), newIconAbsPath, outputFormat);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+	}
+
+	private String getFileNameFromAbsolutePath(String string) {
+		File file = new File(string);
+		String name = file.getName();
+		return name.substring(0,name.lastIndexOf("."));
+	}
+	
+	private String computeIconName(Icon icon){
+		String iconName = icon.getName();
+		iconName = iconName.replaceAll("base", getFileNameFromAbsolutePath(baseIcons[0]));
+		iconName = iconName.replaceAll("overlay", getFileNameFromAbsolutePath(overlayIcons[0]));
+		return iconName;
 	}
 }

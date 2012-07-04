@@ -9,22 +9,22 @@ import org.eclipse.swt.graphics.Rectangle;
 public class OverlayImageDescriptor extends CompositeImageDescriptor {
 	private ImageDescriptor imageDescriptor;
 	private ImageDescriptor overlayImage;
+	private Point overlayPoint;
 	Point size;
 	Point overlaySize;
 
 	public OverlayImageDescriptor(ImageDescriptor imgDescriptor,
-			ImageDescriptor overlayImage) {
+			ImageDescriptor overlayImage, Point overlayPoint) {
 		setImageDescriptor(imgDescriptor);
 		setOverlayImage(overlayImage);
+		setOverlayPoint(overlayPoint);
 	}
 
+	@Override
 	protected void drawCompositeImage(int arg0, int arg1) {
 		drawImage(getImageDescriptor().getImageData(), 0, 0);
 		ImageData overlayImageData = getOverlayImage().getImageData();
-		int xValue = size.x - overlaySize.x;
-		int yValue = size.y - overlaySize.y;
-		;
-		drawImage(overlayImageData, xValue, yValue);
+		drawImage(overlayImageData, overlayPoint.x, overlayPoint.y);
 	}
 
 	protected Point getSize() {
@@ -50,5 +50,14 @@ public class OverlayImageDescriptor extends CompositeImageDescriptor {
 	public ImageDescriptor getOverlayImage() {
 		return overlayImage;
 	}
+	
+	public void setOverlayPoint(Point overlayPoint){
+		this.overlayPoint = overlayPoint;
+	}
+	
+	public Point getOverlayPoint(){
+		return overlayPoint;
+	}
+	
 
 }
