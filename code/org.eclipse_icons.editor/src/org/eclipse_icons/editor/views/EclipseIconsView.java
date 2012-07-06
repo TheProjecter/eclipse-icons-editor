@@ -1,8 +1,10 @@
 package org.eclipse_icons.editor.views;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.action.Action;
@@ -19,16 +21,25 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.DropTarget;
+import org.eclipse.swt.dnd.DropTargetEffect;
+import org.eclipse.swt.dnd.DropTargetEvent;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ContainerSelectionDialog;
+import org.eclipse.ui.part.ResourceTransfer;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse_icons.editor.Activator;
 import org.eclipse_icons.editor.crawlers.CrawlEclipseIconsAction;
@@ -154,6 +165,7 @@ public class EclipseIconsView extends ViewPart {
 			}
 		}
 	}
+	
 
 	public void createPartControl(Composite parent) {
 		viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
@@ -164,6 +176,88 @@ public class EclipseIconsView extends ViewPart {
 		createContextMenu();
 		contributeToActionBars();
 		viewer.expandAll();
+		addDropSupport();
+	}
+	
+
+	private void addDropSupport() {
+		
+		// Listener for menuItems
+		// selected will be null if the user doesn't select this option
+		// in the popup menu
+		class PopUpMenuSelectionListener implements Listener {
+			private String selected;
+	        public void handleEvent(Event e) {
+	        	selected = e.widget.toString();
+	        }
+	        public String getSelected(){
+	        	return selected;
+	        }
+		}
+		
+		// Create the dropTargetEffect
+		DropTargetEffect drop = new DropTargetEffect(viewer.getControl()){
+			
+			@Override
+			public void drop(DropTargetEvent event){
+				if (ResourceTransfer.getInstance().isSupportedType(event.currentDataType)){
+					// Get the dropped resources
+					IResource[] resources = (IResource[])event.data;
+
+			        Menu menu = new Menu(viewer.getControl().getShell(), SWT.POP_UP);
+			        // These listeners will be used to know which was the selected option
+					PopUpMenuSelectionListener baseMenuListener = new PopUpMenuSelectionListener();
+					PopUpMenuSelectionListener overlayMenuListener = new PopUpMenuSelectionListener();
+					
+					// Check if it is a image resource			        
+			        List<String> imageResources = new ArrayList<String>();
+					for (IResource resource : resources){
+						if (UIUtils.isImageFile(resource)){
+							String path = UIUtils.getWorkspacePath().toOSString() + resource.getFullPath();
+							imageResources.add(path);
+						}
+					}
+					// Open menupop if there is at least one image
+					if (!imageResources.isEmpty()){
+						// create menuItems
+				        MenuItem overlayItem = new MenuItem(menu, SWT.PUSH);
+				        overlayItem.setText("Overlay");
+				        overlayItem.setImage(Activator.getImageDescriptor("icons/selectOverlayIcon.png").createImage());
+						MenuItem baseItem = new MenuItem(menu, SWT.PUSH);
+				        baseItem.setText("Base");
+				        baseItem.setImage(Activator.getImageDescriptor("icons/selectBaseIcon.png").createImage());
+				        // add listeners
+				        baseItem.addListener(SWT.Selection, baseMenuListener);
+				        overlayItem.addListener(SWT.Selection, overlayMenuListener);
+				        //show the menu
+				        menu.setLocation(event.x, event.y);
+				        menu.setVisible(true);
+				        // wait for the user to select
+				        while (!menu.isDisposed() && menu.isVisible()) {
+				            if (!Display.getCurrent().readAndDispatch())
+				            	Display.getCurrent().sleep();
+				        }
+					}
+					// update view based on selection
+					if (baseMenuListener.getSelected()!=null){
+						baseIcons = imageResources.toArray(baseIcons);
+						viewer.refresh();
+					}
+					else if (overlayMenuListener.getSelected()!=null){
+						overlayIcons = imageResources.toArray(overlayIcons);
+						viewer.refresh();
+					}
+					// dispose
+					menu.dispose();
+				}
+			}
+		};
+		// Add the drop listener to the viewer
+		int operations = DND.DROP_MOVE | DND.DROP_COPY | DND.DROP_LINK;
+		Transfer[] types = new Transfer[] { ResourceTransfer.getInstance() };
+		DropTarget target = new DropTarget(viewer.getControl(), operations);
+		target.setTransfer(types);
+		target.addDropListener(drop);
 	}
 
 	private void createContextMenu() {
@@ -204,7 +298,7 @@ public class EclipseIconsView extends ViewPart {
 	private String[] selectIcons(String type){
         FileDialog fd = new FileDialog(Display.getCurrent().getActiveShell(), SWT.OPEN);
         fd.setText("Select "+ type +" Image");
-        String[] filterExt = { "*.gif", "*.png", "*.bmp", "*.jpg" };
+        String[] filterExt = UIUtils.IMAGE_EXTENSIONS;
         if (type.equalsIgnoreCase("base")){
         	fd.setFilterPath(UIUtils.getFileAbsolutePathFromPlugin("gallery/base"));
         } else if (type.equalsIgnoreCase("overlay")){

@@ -30,6 +30,8 @@ import org.osgi.framework.Bundle;
 
 public class UIUtils {
 
+	public static final String[] IMAGE_EXTENSIONS = {"*.gif", "*.png", "*.bmp", "*.jpg"};
+
 	public static void refreshWorkspace(String fullPath) {
 
 		try {
@@ -127,6 +129,21 @@ public class UIUtils {
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public static boolean isImageFile(IResource resource) {
+		String resourceExtension = resource.getFileExtension();
+		if (resourceExtension == null){
+			return false;
+		}
+		for (String extension : IMAGE_EXTENSIONS){
+			// remove *.
+			extension = extension.substring(2);
+			if (resourceExtension.equals(extension)){
+				return true;
+			}
+		}
+		return false;
 	}
 
 	
