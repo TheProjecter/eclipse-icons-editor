@@ -26,14 +26,24 @@ import org.eclipse.swt.dnd.DropTarget;
 import org.eclipse.swt.dnd.DropTargetEffect;
 import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.widgets.Monitor;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbenchActionConstants;
@@ -68,15 +78,75 @@ public class EclipseIconsView extends ViewPart {
 	private Action selectOverlayIconAction;
 	private Action selectBaseIconAction;
 	private Action saveAction;
+	private Action overlayNextIconAction;
+	private Action overlayPreviousIconAction;
+	private Action baseNextIconAction;
+	private Action basePreviousIconAction;
+	private Action settingsAction;
 	
 	private String[] baseIcons;
 	private String[] overlayIcons;
+	private int baseCurrentIndex = 0;
+	private int overlayCurrentIndex = 0;
 	
-	private Image currentImage = null;
+	private Boolean[] effects = new Boolean[] {true, false, false};
+	// normal, disable, gray
 	
 	private int outputFormat = SWT.IMAGE_PNG;
 	
-	class ViewContentProvider implements IStructuredContentProvider, 
+	private Shell createSettingsShell(){
+		Shell shell = new Shell(Display.getCurrent());
+		shell.setText("Eclipse Icons Editor Settings");
+		shell.setImage(Activator.getImageDescriptor("icons/settings.png").createImage());
+		GridLayout gridLayout = new GridLayout();
+		gridLayout.numColumns = 1;
+		shell.setLayout(gridLayout);
+		
+		// Creating Effects group
+		Group effectGroup = new Group(shell, SWT.SHADOW_IN);
+	    effectGroup.setText("Desired effects");
+	    effectGroup.setLayout(new RowLayout(SWT.VERTICAL));
+	    final Button[] effectCheckBoxes = new Button[3];
+		effectCheckBoxes[0] = new Button(effectGroup, SWT.CHECK);
+		effectCheckBoxes[0].setText("Normal");
+		effectCheckBoxes[0].setSelection(effects[0]);
+		effectCheckBoxes[1] = new Button(effectGroup, SWT.CHECK);
+		effectCheckBoxes[1].setText("Disabled");
+		effectCheckBoxes[1].setSelection(effects[1]);
+		effectCheckBoxes[2] = new Button(effectGroup, SWT.CHECK);
+		effectCheckBoxes[2].setText("Gray");
+		effectCheckBoxes[2].setSelection(effects[2]);
+
+		// Apply button
+		Button applyButton = new Button(shell, SWT.PUSH);
+		applyButton.setText("Apply");
+		GridData gridData = new GridData(GridData.END, GridData.CENTER, false, false);
+		gridData.horizontalSpan = 3;
+		applyButton.setLayoutData(gridData);
+		applyButton.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent event) {
+				// Update effects and set to Normal effect if no one was selected
+				boolean atLeastOneSelected = false;
+				for (int i = 0; i < effectCheckBoxes.length; i++) {
+					effects[i] = effectCheckBoxes[i].getSelection();
+					atLeastOneSelected = atLeastOneSelected || effects[i];
+				}
+				if (!atLeastOneSelected){
+					effects[0] = true;
+					effectCheckBoxes[0].setSelection(true);
+				}
+				// Refresh
+				viewer.refresh();
+			}
+		});
+		shell.pack();
+		return shell;
+	}
+	
+	/**
+	 * Content Provider
+	 */
+	class IconsViewContentProvider implements IStructuredContentProvider, 
 	   ITreeContentProvider {
 		
 
@@ -84,12 +154,7 @@ public class EclipseIconsView extends ViewPart {
 		
 		public void inputChanged(Viewer v, Object oldInput, Object newInput) {
 		}
-		public void dispose() {
-			if (currentImage!=null){
-				currentImage.dispose();
-				currentImage = null;
-			}
-		}
+		
 		public Object[] getElements(Object parent) {
 			if (parent.equals(getViewSite())) {
 				if (invisibleRoot==null) initialize();
@@ -117,6 +182,10 @@ public class EclipseIconsView extends ViewPart {
 		}
 		
 		private void initialize() {
+			IconCategory baseCategory = new IconCategory(IconCategory.BASE, IconCategory.BASE);
+			Icon base = new Icon(Icon.BASE_ICON,"base");
+			baseCategory.addIcon(base);
+			
 			IconCategory centeredOverlayCategory = new IconCategory(IconCategory.CENTERED_OVERLAY.replaceAll(" ", "_"), IconCategory.CENTERED_OVERLAY);
 			Icon iconCenteredOverlay = new Icon(Icon.CENTERED_OVERLAY_ICON,"base_overlay");
 			centeredOverlayCategory.addIcon(iconCenteredOverlay);
@@ -142,35 +211,62 @@ public class EclipseIconsView extends ViewPart {
 			sidesOverlayCategory.addIcon(iconSide4Overlay);
 		
 			invisibleRoot = new IconCategory("","");
+			invisibleRoot.addIcon(baseCategory);
 			invisibleRoot.addIcon(centeredOverlayCategory);
 			invisibleRoot.addIcon(cornersOverlayCategory);
 			invisibleRoot.addIcon(sidesOverlayCategory);
 		}
+
+		public void dispose() {
+		}
 	}
 
-	
-	class ViewLabelProvider extends LabelProvider {
+	/**
+	 * Label Provider
+	 */
+	class IconsViewLabelProvider extends LabelProvider {
+		
+		// Get Image
 		public Image getImage(Object obj) {
 			if (obj instanceof IconCategory){
 				return ((IconCategory)obj).getImage();
 			} else { // It is an Icon
-				return ((Icon)obj).processImage(baseIcons,overlayIcons);
+				// Process the image
+				Image image = ((Icon)obj).processImage(overlayIcons[overlayCurrentIndex],baseIcons[baseCurrentIndex]);
+				// Apply effects
+				if (effects[0]){
+					return image;
+				} else if (effects[1]){
+					return (new Image(Display.getCurrent(),image,SWT.IMAGE_DISABLE));
+				} else if (effects[2]){
+					return (new Image(Display.getCurrent(),image,SWT.IMAGE_GRAY));
+				}
+				return image;
 			}
 		}
+		
+		// Get Text
 		public String getText(Object obj) {
+			// Show category name
 			if (obj instanceof IconCategory){
 				return super.getText(obj);
 			} else {
-				return computeIconName((Icon)obj);
+				// Show the name of the icon for the first effect found
+				for (int indexEffect = 0; indexEffect < effects.length; indexEffect++){
+					if (effects[indexEffect]){
+						return computeIconName((Icon)obj, overlayCurrentIndex, baseCurrentIndex, indexEffect);
+					}
+				}
 			}
+			return computeIconName((Icon)obj, overlayCurrentIndex, baseCurrentIndex, 0);
 		}
 	}
 	
 
 	public void createPartControl(Composite parent) {
 		viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
-		viewer.setContentProvider(new ViewContentProvider());
- 		viewer.setLabelProvider(new ViewLabelProvider());
+		viewer.setContentProvider(new IconsViewContentProvider());
+ 		viewer.setLabelProvider(new IconsViewLabelProvider());
 		viewer.setInput(getViewSite());
 		createActions();
 		createContextMenu();
@@ -209,7 +305,7 @@ public class EclipseIconsView extends ViewPart {
 					PopUpMenuSelectionListener baseMenuListener = new PopUpMenuSelectionListener();
 					PopUpMenuSelectionListener overlayMenuListener = new PopUpMenuSelectionListener();
 					
-					// Check if it is a image resource			        
+					// Check if it is an image resource			        
 			        List<String> imageResources = new ArrayList<String>();
 					for (IResource resource : resources){
 						if (UIUtils.isImageFile(resource)){
@@ -241,10 +337,12 @@ public class EclipseIconsView extends ViewPart {
 					// update view based on selection
 					if (baseMenuListener.getSelected()!=null){
 						baseIcons = imageResources.toArray(baseIcons);
+						baseCurrentIndex = 0;
 						viewer.refresh();
 					}
 					else if (overlayMenuListener.getSelected()!=null){
 						overlayIcons = imageResources.toArray(overlayIcons);
+						overlayCurrentIndex = 0;
 						viewer.refresh();
 					}
 					// dispose
@@ -288,6 +386,13 @@ public class EclipseIconsView extends ViewPart {
 		manager.add(selectOverlayIconAction);
 		manager.add(selectBaseIconAction);
 		manager.add(new Separator());
+		manager.add(overlayPreviousIconAction);
+		manager.add(overlayNextIconAction);
+		manager.add(basePreviousIconAction);
+		manager.add(baseNextIconAction);
+		manager.add(new Separator());
+		manager.add(settingsAction);
+		manager.add(new Separator());
 		manager.add(saveAction);
 	}
 	
@@ -295,20 +400,37 @@ public class EclipseIconsView extends ViewPart {
 		manager.add(new CrawlEclipseIconsAction());
 	}
 
+	/**
+	 * Opens a external files selector for images
+	 * @param type: should be base or overlay
+	 * @return the absolutepath of the selected files
+	 */
 	private String[] selectIcons(String type){
-        FileDialog fd = new FileDialog(Display.getCurrent().getActiveShell(), SWT.OPEN);
+        FileDialog fd = new FileDialog(Display.getCurrent().getActiveShell(), SWT.OPEN | SWT.MULTI);
+        
+        // customize by type
         fd.setText("Select "+ type +" Image");
-        String[] filterExt = UIUtils.IMAGE_EXTENSIONS;
         if (type.equalsIgnoreCase("base")){
         	fd.setFilterPath(UIUtils.getFileAbsolutePathFromPlugin("gallery/base"));
         } else if (type.equalsIgnoreCase("overlay")){
         	fd.setFilterPath(UIUtils.getFileAbsolutePathFromPlugin("gallery/overlay"));
         }
+        
+        // Filter extensions by type but allows also *.* because there could be different
+        // extensions (gif and png) in the same folder.
+        String[] filterExt = new String[UIUtils.IMAGE_EXTENSIONS.length + 1];
+        System.arraycopy(UIUtils.IMAGE_EXTENSIONS, 0, filterExt, 0, UIUtils.IMAGE_EXTENSIONS.length);
+        filterExt[UIUtils.IMAGE_EXTENSIONS.length] = "*.*";
         fd.setFilterExtensions(filterExt);
+        
+        // Open it
         String selection = fd.open();
         if (selection != null) {
+        	// Something was selected. The user doesn't press Cancel
             String[] files = fd.getFileNames();
+            // now we have the relative paths, make them absolute
             String filterPath = fd.getFilterPath();
+            // we add the separatorChar just in case
             if (filterPath.charAt(filterPath.length() -1) != File.separatorChar){
             	filterPath = filterPath + File.separatorChar;
             }
@@ -317,15 +439,81 @@ public class EclipseIconsView extends ViewPart {
             }
             return files;
         }
+        // Selection cancelled
         return null;
 	}
 	
+	/**
+	 * Create Actions
+	 */
 	private void createActions() {
+		// Overlay Next Action
+		overlayNextIconAction = new Action() {
+			public void run() {
+				// check if it is the last
+				if (overlayCurrentIndex < overlayIcons.length -1){
+					overlayCurrentIndex++;
+					viewer.refresh();
+				}
+			}
+		};
+		overlayNextIconAction.setText("Next Overlay");
+		overlayNextIconAction.setToolTipText("Next Overlay");
+		overlayNextIconAction.setImageDescriptor(Activator.getImageDescriptor(
+		           "icons/goNextOverlay.png"));
+		
+		// Overlay Previous Action
+		overlayPreviousIconAction = new Action() {
+			public void run() {
+				// check if it is the last
+				if (overlayCurrentIndex != 0){
+					overlayCurrentIndex--;
+					viewer.refresh();
+				}
+			}
+		};
+		overlayPreviousIconAction.setText("Previous Overlay");
+		overlayPreviousIconAction.setToolTipText("Previous Overlay");
+		overlayPreviousIconAction.setImageDescriptor(Activator.getImageDescriptor(
+		           "icons/goPreviousOverlay.png"));
+		
+		// Base Next Action
+		baseNextIconAction = new Action() {
+			public void run() {
+				// check if it is the last
+				if (baseCurrentIndex < baseIcons.length -1){
+					baseCurrentIndex++;
+					viewer.refresh();
+				}
+			}
+		};
+		baseNextIconAction.setText("Next Base");
+		baseNextIconAction.setToolTipText("Next Base");
+		baseNextIconAction.setImageDescriptor(Activator.getImageDescriptor(
+		           "icons/goNextBase.png"));
+		
+		// Base Previous Action
+		basePreviousIconAction = new Action() {
+			public void run() {
+				// check if it is the last
+				if (baseCurrentIndex != 0){
+					baseCurrentIndex--;
+					viewer.refresh();
+				}
+			}
+		};
+		basePreviousIconAction.setText("Previous Base");
+		basePreviousIconAction.setToolTipText("Previous Base");
+		basePreviousIconAction.setImageDescriptor(Activator.getImageDescriptor(
+		           "icons/goPreviousBase.png"));
+		
+		// Select Overlay
 		selectOverlayIconAction = new Action() {
 			public void run() {
 				String[] selected = selectIcons("Overlay");
 				if (selected!=null){
 					overlayIcons = selected;
+					overlayCurrentIndex = 0;
 					viewer.refresh();
 				}
 			}
@@ -335,22 +523,26 @@ public class EclipseIconsView extends ViewPart {
 		selectOverlayIconAction.setImageDescriptor(Activator.getImageDescriptor(
 		           "icons/selectOverlayIcon.png"));
 		
+		// Select Base
 		selectBaseIconAction = new Action() {
 			public void run() {
 				String[] selected = selectIcons("Base");
 				if (selected!=null){
 					baseIcons = selected;
+					baseCurrentIndex = 0;
 					viewer.refresh();
 				}
 			}
 		};
-		
 		selectBaseIconAction.setText("Select Base Icon");
 		selectBaseIconAction.setToolTipText("Select Base Icon");
 		selectBaseIconAction.setImageDescriptor(Activator.getImageDescriptor(
 		           "icons/selectBaseIcon.png"));
 		
-		saveAction = new Action() {
+		/**
+		 * Save Action
+		 */
+		class SaveAction extends Action {
 			public void run() {
 				IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
 				// No selection
@@ -373,24 +565,61 @@ public class EclipseIconsView extends ViewPart {
 						@SuppressWarnings("unchecked")
 						List<Icon> selectionList = selection.toList();
 						for (Icon selectedElement : selectionList){
+							// Perform the Save for each selected element
 							save(selectedElement, path);
 						}
+						// Refresh workspace
 						UIUtils.refreshWorkspace(path);		
 					}
 				}
 			}
-		};
+		}
 		
+		// Save
+		saveAction = new SaveAction();
 		saveAction.setText("Save");
 		saveAction.setToolTipText("Save");
 		saveAction.setImageDescriptor(PlatformUI.getWorkbench().
 				getSharedImages().getImageDescriptor(ISharedImages.IMG_ETOOL_SAVE_EDIT));
+		
+		// Settings
+		settingsAction = new Action() {
+			public void run() {
+				Shell settings = createSettingsShell();
+				
+				// Center the settings shell
+				Monitor primary = viewer.getControl().getDisplay().getPrimaryMonitor();
+			    Rectangle bounds = primary.getBounds();
+			    Rectangle rect = settings.getBounds();
+			    int x = bounds.x + (bounds.width - rect.width) / 2;
+			    int y = bounds.y + (bounds.height - rect.height) / 2;
+			    settings.setLocation(x, y);
+				
+			    // Open
+				settings.open();
+				while (!settings.isDisposed()) {
+					if (!viewer.getControl().getDisplay().readAndDispatch())
+						viewer.getControl().getDisplay().sleep();
+				}
+			}
+		};
+		settingsAction.setText("Settings");
+		settingsAction.setToolTipText("Settings");
+		settingsAction.setImageDescriptor(Activator.getImageDescriptor(
+		           "icons/settings.png"));
 	}
 
 	public void setFocus() {
 		viewer.getControl().setFocus();
 	}
 	
+	/**
+	 * Save icons
+	 * @param icon
+	 * A selected element in the tree
+	 * @param outputPath
+	 * The containing folder absolute path
+	 */
 	private void save(Icon icon, String outputPath){
 		if (icon instanceof IconCategory){
 			for (Icon child : ((IconCategory)icon).getIcons()){
@@ -398,27 +627,56 @@ public class EclipseIconsView extends ViewPart {
 			}
 		} else {
 			try {
-				// Create new icon absolute path
-				String newIconAbsPath = computeIconName(icon);
-				newIconAbsPath = outputPath + File.separator + newIconAbsPath + "." + Utils.getExtension(outputFormat);
-				// Save it
-				Utils.saveIconToFile(icon.processImage(baseIcons, overlayIcons), newIconAbsPath, outputFormat);
+				// Loop through all the combinations and save them
+				for (int indexOverlay = 0; indexOverlay < overlayIcons.length; indexOverlay++){
+					for (int indexBase = 0; indexBase < baseIcons.length; indexBase++){
+						for (int indexEffect = 0; indexEffect < effects.length; indexEffect++){
+							// Create new icon absolute path
+							if (effects[indexEffect]){
+								String newIconAbsPath = outputPath + File.separator + computeIconName(icon,indexOverlay,indexBase,indexEffect);
+								Image image = icon.processImage(overlayIcons[indexOverlay], baseIcons[indexBase]);
+								// Handle effects
+								if (effects[1] && indexEffect == 1){
+									image = new Image(Display.getCurrent(),image,SWT.IMAGE_DISABLE);
+								} else if (effects[2] && indexEffect ==2) {
+									image = new Image(Display.getCurrent(),image,SWT.IMAGE_GRAY);
+								}
+								newIconAbsPath = newIconAbsPath + "." + Utils.getExtension(outputFormat);
+								// Save it
+								Utils.saveIconToFile(image, newIconAbsPath, outputFormat);
+							}
+						}
+					}
+				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
 		}
 	}
 
+	/**
+	 * Given an absolute Path it returns the file name removing the extension
+	 * @param absolute path string
+	 * @return file name without extension
+	 */
 	private String getFileNameFromAbsolutePath(String string) {
 		File file = new File(string);
 		String name = file.getName();
-		return name.substring(0,name.lastIndexOf("."));
+		if (name!=null && name.contains(".")){
+			return name.substring(0,name.lastIndexOf("."));
+		} // else
+		return name;
 	}
 	
-	private String computeIconName(Icon icon){
+	private String computeIconName(Icon icon, int overlayIndex, int baseIndex, int effect){
 		String iconName = icon.getName();
-		iconName = iconName.replaceAll("base", getFileNameFromAbsolutePath(baseIcons[0]));
-		iconName = iconName.replaceAll("overlay", getFileNameFromAbsolutePath(overlayIcons[0]));
+		iconName = iconName.replaceAll("base", getFileNameFromAbsolutePath(baseIcons[baseIndex]));
+		iconName = iconName.replaceAll("overlay", getFileNameFromAbsolutePath(overlayIcons[overlayIndex]));
+		if (effect == 1){
+			iconName = iconName + "_disabled";
+		} else if (effect == 2){
+			iconName = iconName + "_gray";
+		}
 		return iconName;
 	}
 }

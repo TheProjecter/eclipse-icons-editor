@@ -5,6 +5,7 @@ import org.eclipse_icons.editor.utils.image.ImageProcessor;
 
 public class Icon {
 	
+	public static final String BASE_ICON = "Base icon";
 	public static final String CENTERED_OVERLAY_ICON = "Centered overlay icon";
 	
 	public static final String TOP_LEFT_CORNER_OVERLAY_ICON = "Top left corner overlay icon";
@@ -43,7 +44,7 @@ public class Icon {
 	public String toString() {
 		return getName();
 	}
-	public Image processImage(String[] baseIcons, String[] overlayIcons) {
-		return ImageProcessor.process(getId(),baseIcons,overlayIcons);
+	public Image processImage(String overlayIcon, String baseIcon) {
+		return ImageProcessor.process(getId(),overlayIcon, baseIcon);
 	}
 }

@@ -9,11 +9,11 @@ import org.eclipse_icons.editor.views.Icon;
 
 public class ImageProcessor {
 
-	public static Image process(String id, String[] baseIcons,
-			String[] overlayIcons) {
+	public static Image process(String id, String overlayIcon,
+			String baseIcon) {
 		
-		Image baseImage = new Image(Display.getCurrent(), baseIcons[0]);
-		Image overlayImage = new Image(Display.getCurrent(), overlayIcons[0]);
+		Image baseImage = new Image(Display.getCurrent(), baseIcon);
+		Image overlayImage = new Image(Display.getCurrent(), overlayIcon);
 		
 		int baseWidth = baseImage.getBounds().width;
 		int baseHeight = baseImage.getBounds().height;
