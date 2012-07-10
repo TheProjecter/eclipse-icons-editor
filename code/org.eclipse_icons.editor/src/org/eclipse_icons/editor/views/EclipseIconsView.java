@@ -272,7 +272,7 @@ public class EclipseIconsView extends ViewPart {
 		createContextMenu();
 		contributeToActionBars();
 		viewer.expandAll();
-		addDropSupport();
+		//addDropSupport();
 	}
 	
 
@@ -351,7 +351,7 @@ public class EclipseIconsView extends ViewPart {
 			}
 		};
 		// Add the drop listener to the viewer
-		int operations = DND.DROP_MOVE | DND.DROP_COPY | DND.DROP_LINK;
+		int operations = DND.DROP_LINK;
 		Transfer[] types = new Transfer[] { ResourceTransfer.getInstance() };
 		DropTarget target = new DropTarget(viewer.getControl(), operations);
 		target.setTransfer(types);

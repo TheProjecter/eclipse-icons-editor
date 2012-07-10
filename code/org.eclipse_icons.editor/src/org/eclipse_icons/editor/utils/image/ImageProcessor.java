@@ -19,7 +19,11 @@ public class ImageProcessor {
 		int baseHeight = baseImage.getBounds().height;
 		int overlayWidth = overlayImage.getBounds().width;
 		int overlayHeight = overlayImage.getBounds().height;
-
+		
+		if (id.equals(Icon.BASE_ICON)){
+			return baseImage;
+		}
+		
 		if (id.equals(Icon.CENTERED_OVERLAY_ICON)){
 			int x = (baseWidth/2)-(overlayWidth/2);
 			int y = (baseHeight/2)-(overlayHeight/2);
