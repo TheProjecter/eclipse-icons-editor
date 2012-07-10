@@ -22,9 +22,13 @@ import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.DragSource;
+import org.eclipse.swt.dnd.DragSourceEffect;
+import org.eclipse.swt.dnd.DragSourceEvent;
 import org.eclipse.swt.dnd.DropTarget;
 import org.eclipse.swt.dnd.DropTargetEffect;
 import org.eclipse.swt.dnd.DropTargetEvent;
+import org.eclipse.swt.dnd.FileTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -272,10 +276,58 @@ public class EclipseIconsView extends ViewPart {
 		createContextMenu();
 		contributeToActionBars();
 		viewer.expandAll();
-		//addDropSupport();
+		addDropSupport();
+		addDragSupport();
 	}
 	
-
+	private void addDragSupport() {
+		DragSourceEffect drag = new DragSourceEffect(viewer.getControl()){
+		
+			File tempFolder;
+			String[] iconAbsPaths;
+			
+			@Override
+			public void dragStart(DragSourceEvent event){
+					IStructuredSelection selection = (IStructuredSelection)viewer.getSelection();
+					if (selection!=null && !selection.isEmpty()){
+						// Get or create temporary folder
+				        String tempDir = System.getProperty("java.io.tmpdir");
+				        tempFolder = new File(tempDir + "EclipseIconsEditorTemp" + System.currentTimeMillis());
+				        if (!tempFolder.exists()){
+				        	tempFolder.mkdir();
+				        	// Delete on exit
+				        	tempFolder.deleteOnExit();
+				        }
+					@SuppressWarnings("unchecked")
+					List<Icon> selectionList = selection.toList();
+					for (Icon selectedElement : selectionList){
+						// Perform the Save for each selected element
+						save(selectedElement, tempFolder.getAbsolutePath());
+					}
+					// create the paths needed for event.data
+					iconAbsPaths = new String[tempFolder.listFiles().length];
+					for (int i = 0; i < iconAbsPaths.length; i++) {
+						iconAbsPaths[i] = tempFolder.listFiles()[i].getAbsolutePath();
+						// mark also all the files as delete on exit
+						tempFolder.listFiles()[i].deleteOnExit();
+					}
+					}
+			}
+			
+			@Override
+			public void dragSetData(DragSourceEvent event) {
+				if (FileTransfer.getInstance().isSupportedType(event.dataType)){
+					event.data = iconAbsPaths;
+			}
+			}
+		};
+		int operations = DND.DROP_MOVE |  DND.DROP_COPY | DND.DROP_LINK;
+		Transfer[] types = new Transfer[] { FileTransfer.getInstance() };
+		DragSource source = new DragSource(viewer.getControl(), operations);
+		source.setTransfer(types);
+		source.addDragListener(drag);
+	}
+		
 	private void addDropSupport() {
 		
 		// Listener for menuItems
@@ -297,9 +349,14 @@ public class EclipseIconsView extends ViewPart {
 			@Override
 			public void drop(DropTargetEvent event){
 				if (ResourceTransfer.getInstance().isSupportedType(event.currentDataType)){
+					// We change this because we don't want the resource to be removed as it is a move operation.
+					event.detail = DND.DROP_NONE;
+					
 					// Get the dropped resources
 					IResource[] resources = (IResource[])event.data;
 
+					// Check if null or empty
+					if (resources!=null && resources.length>0){
 			        Menu menu = new Menu(viewer.getControl().getShell(), SWT.POP_UP);
 			        // These listeners will be used to know which was the selected option
 					PopUpMenuSelectionListener baseMenuListener = new PopUpMenuSelectionListener();
@@ -313,7 +370,7 @@ public class EclipseIconsView extends ViewPart {
 							imageResources.add(path);
 						}
 					}
-					// Open menupop if there is at least one image
+					// Open menupopup if there is at least one image
 					if (!imageResources.isEmpty()){
 						// create menuItems
 				        MenuItem overlayItem = new MenuItem(menu, SWT.PUSH);
@@ -347,11 +404,12 @@ public class EclipseIconsView extends ViewPart {
 					}
 					// dispose
 					menu.dispose();
+					}
 				}
 			}
 		};
 		// Add the drop listener to the viewer
-		int operations = DND.DROP_LINK;
+		int operations = DND.DROP_MOVE;
 		Transfer[] types = new Transfer[] { ResourceTransfer.getInstance() };
 		DropTarget target = new DropTarget(viewer.getControl(), operations);
 		target.setTransfer(types);
