@@ -348,30 +348,53 @@ public class EclipseIconsView extends ViewPart {
 			
 			@Override
 			public void drop(DropTargetEvent event){
-				if (ResourceTransfer.getInstance().isSupportedType(event.currentDataType)){
+				// If the it is supported by File or Resource transfer
+				if (FileTransfer.getInstance().isSupportedType(event.currentDataType)
+						|| ResourceTransfer.getInstance().isSupportedType(event.currentDataType)){
 					// We change this because we don't want the resource to be removed as it is a move operation.
 					event.detail = DND.DROP_NONE;
 					
-					// Get the dropped resources
-					IResource[] resources = (IResource[])event.data;
-
-					// Check if null or empty
-					if (resources!=null && resources.length>0){
-			        Menu menu = new Menu(viewer.getControl().getShell(), SWT.POP_UP);
-			        // These listeners will be used to know which was the selected option
-					PopUpMenuSelectionListener baseMenuListener = new PopUpMenuSelectionListener();
-					PopUpMenuSelectionListener overlayMenuListener = new PopUpMenuSelectionListener();
+					// We create the filePaths depending on the transfer type
+					List<String> filePaths = new ArrayList<String>();
 					
-					// Check if it is an image resource			        
-			        List<String> imageResources = new ArrayList<String>();
-					for (IResource resource : resources){
-						if (UIUtils.isImageFile(resource)){
-							String path = UIUtils.getWorkspacePath().toOSString() + resource.getFullPath();
-							imageResources.add(path);
+					// Resource Transfer
+					if (ResourceTransfer.getInstance().isSupportedType(event.currentDataType)){
+						// Get the dropped resources
+						IResource[] resources = (IResource[])event.data;
+						
+						if (resources!=null){
+							// Get paths		        
+							for (IResource resource : resources){
+								filePaths.add(resource.getLocation().toOSString());
+							}
+						}
+						
+					// File Transfer
+					} else if (FileTransfer.getInstance().isSupportedType(event.currentDataType)){
+						// Get the file abs paths
+						String[] files = (String[])event.data;
+						if (files!=null){
+							for (String file : files){
+								filePaths.add(file);
+							}
 						}
 					}
-					// Open menupopup if there is at least one image
-					if (!imageResources.isEmpty()){
+					
+					// Check if they are image files  
+			        List<String> imageFiles = new ArrayList<String>();
+					for (String filePath : filePaths){
+						if (UIUtils.isImageFile(filePath)){
+							imageFiles.add(filePath);
+						}
+					}
+					
+					// Check if images were selected
+					if (!imageFiles.isEmpty()){
+						Menu menu = new Menu(viewer.getControl().getShell(), SWT.POP_UP);
+						// These listeners will be used to know which was the selected option
+						PopUpMenuSelectionListener baseMenuListener = new PopUpMenuSelectionListener();
+						PopUpMenuSelectionListener overlayMenuListener = new PopUpMenuSelectionListener();
+
 						// create menuItems
 				        MenuItem overlayItem = new MenuItem(menu, SWT.PUSH);
 				        overlayItem.setText("Overlay");
@@ -390,27 +413,28 @@ public class EclipseIconsView extends ViewPart {
 				            if (!Display.getCurrent().readAndDispatch())
 				            	Display.getCurrent().sleep();
 				        }
-					}
-					// update view based on selection
-					if (baseMenuListener.getSelected()!=null){
-						baseIcons = imageResources.toArray(baseIcons);
-						baseCurrentIndex = 0;
-						viewer.refresh();
-					}
-					else if (overlayMenuListener.getSelected()!=null){
-						overlayIcons = imageResources.toArray(overlayIcons);
-						overlayCurrentIndex = 0;
-						viewer.refresh();
-					}
-					// dispose
-					menu.dispose();
+					
+				        // update view based on selection
+				        if (baseMenuListener.getSelected()!=null){
+				        	baseIcons = imageFiles.toArray(baseIcons);
+				        	baseCurrentIndex = 0;
+				        	viewer.refresh();
+				        }
+				        else if (overlayMenuListener.getSelected()!=null){
+				        	overlayIcons = imageFiles.toArray(overlayIcons);
+				        	overlayCurrentIndex = 0;
+				        	viewer.refresh();
+				        }
+				        // dispose
+				        menu.dispose();
 					}
 				}
 			}
 		};
+		
 		// Add the drop listener to the viewer
 		int operations = DND.DROP_MOVE;
-		Transfer[] types = new Transfer[] { ResourceTransfer.getInstance() };
+		Transfer[] types = new Transfer[] { ResourceTransfer.getInstance(), FileTransfer.getInstance() };
 		DropTarget target = new DropTarget(viewer.getControl(), operations);
 		target.setTransfer(types);
 		target.addDropListener(drop);

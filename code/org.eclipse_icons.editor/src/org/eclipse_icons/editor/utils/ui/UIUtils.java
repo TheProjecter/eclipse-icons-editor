@@ -131,16 +131,20 @@ public class UIUtils {
 		}
 	}
 
-	public static boolean isImageFile(IResource resource) {
-		String resourceExtension = resource.getFileExtension();
-		if (resourceExtension == null){
+	public static boolean isImageFile(String filePath) {
+		File file = new File(filePath);
+		String fileName = file.getName();
+		int dot = fileName.lastIndexOf(".");
+		if (dot==-1) {
 			return false;
-		}
-		for (String extension : IMAGE_EXTENSIONS){
-			// remove *.
-			extension = extension.substring(2);
-			if (resourceExtension.equals(extension)){
-				return true;
+		} else {
+			String fileExt = fileName.substring(dot,fileName.length());
+			for (String extension : IMAGE_EXTENSIONS){
+				// remove *
+				extension = extension.substring(1);
+				if (fileExt.equalsIgnoreCase(extension)){
+					return true;
+				}
 			}
 		}
 		return false;
