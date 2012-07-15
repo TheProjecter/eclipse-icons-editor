@@ -214,11 +214,24 @@ public class EclipseIconsView extends ViewPart {
 			sidesOverlayCategory.addIcon(iconSide3Overlay);
 			sidesOverlayCategory.addIcon(iconSide4Overlay);
 		
+			IconCategory flipRotateCategory = new IconCategory(IconCategory.FLIP_ROTATE,IconCategory.FLIP_ROTATE);
+			Icon iconRotateLeft = new Icon(Icon.ROTATE_LEFT_BASE_ICON,"base_left_rotate");
+			Icon iconRotateRight = new Icon(Icon.ROTATE_RIGHT_BASE_ICON,"base_right_rotate");
+			Icon iconRotate180 = new Icon(Icon.ROTATE_180_BASE_ICON,"base_180_rotate");
+			Icon iconFlipHorizontal = new Icon(Icon.FLIP_HORIZONTAL_BASE_ICON,"base_flip_horizontal");
+			Icon iconFlipVertical = new Icon(Icon.FLIP_VERTICAL_BASE_ICON,"base_flip_vertical");
+			flipRotateCategory.addIcon(iconRotateLeft);
+			flipRotateCategory.addIcon(iconRotateRight);
+			flipRotateCategory.addIcon(iconRotate180);
+			flipRotateCategory.addIcon(iconFlipHorizontal);
+			flipRotateCategory.addIcon(iconFlipVertical);
+			
 			invisibleRoot = new IconCategory("","");
 			invisibleRoot.addIcon(baseCategory);
 			invisibleRoot.addIcon(centeredOverlayCategory);
 			invisibleRoot.addIcon(cornersOverlayCategory);
 			invisibleRoot.addIcon(sidesOverlayCategory);
+			invisibleRoot.addIcon(flipRotateCategory);
 		}
 
 		public void dispose() {

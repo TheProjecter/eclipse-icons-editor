@@ -1,6 +1,6 @@
 package org.eclipse_icons.editor.utils.image;
 
-
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
@@ -70,34 +70,29 @@ public class ImageProcessor {
 			int x = 0;
 			int y = (baseHeight/2)-(overlayHeight/2);
 			return Utils.createOverlapedImage(overlayImage,baseImage,new Point(x,y));
-		} 
+		}
+		
+		// FIXME Some images lost transparency information
+		if (id.equals(Icon.ROTATE_LEFT_BASE_ICON)){
+			return new Image(baseImage.getDevice(),Utils.rotate(baseImage.getImageData(), SWT.LEFT));
+		}
+		if (id.equals(Icon.ROTATE_RIGHT_BASE_ICON)){
+			return new Image(baseImage.getDevice(),Utils.rotate(baseImage.getImageData(), SWT.RIGHT));
+		}
+		if (id.equals(Icon.ROTATE_180_BASE_ICON)){
+			return new Image(baseImage.getDevice(),Utils.rotate(baseImage.getImageData(), SWT.DOWN));
+		}
+		if (id.equals(Icon.FLIP_HORIZONTAL_BASE_ICON)){
+			return new Image(baseImage.getDevice(),Utils.flip(baseImage.getImageData(), false));
+		}
+		if (id.equals(Icon.FLIP_VERTICAL_BASE_ICON)){
+			return new Image(baseImage.getDevice(),Utils.flip(baseImage.getImageData(), true));
+		}
 		
 		
 		else {
 			return Activator.getImageDescriptor("icons/default/base.png").createImage();
 		}
 	}
-	
-//	Image image = null;
-//	if (baseIcons != null && baseIcons.length>0 && overlayIcons != null && overlayIcons.length>0){
-//		image = Utils.createOverlapedImage(overlayIcons[0],baseIcons[0]);
-//	} else if (baseIcons != null && baseIcons.length>0){
-//		image = new Image(Display.getCurrent(), baseIcons[0]);
-//	} else if (overlayIcons != null && overlayIcons.length>0){
-//		image = new Image(Display.getCurrent(), overlayIcons[0]);
-//	}
-//	if (image==null){
-//		// It is needed to create a copy because we cannot dispose a shared image
-//		image = new Image(Display.getCurrent(),PlatformUI.getWorkbench().
-//			getSharedImages().getImage(ISharedImages.IMG_OBJ_ELEMENT),SWT.IMAGE_COPY);
-//	}
-//	if (currentImage != image){
-//		if (currentImage != null){
-//			currentImage.dispose();
-//		}
-//		currentImage = image;
-//	}
-//	
-//	return image;
 
 }

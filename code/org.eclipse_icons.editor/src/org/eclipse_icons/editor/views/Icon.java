@@ -18,6 +18,12 @@ public class Icon {
 	public static final String LEFT_SIDE_OVERLAY_ICON = "Left side overlay icon";
 	public static final String BOTTOM_SIDE_OVERLAY_ICON = "Bottom side overlay icon";
 	
+	public static final String FLIP_HORIZONTAL_BASE_ICON = "Flip horizontal base icon";
+	public static final String FLIP_VERTICAL_BASE_ICON = "Flip vertical base icon";
+	public static final String ROTATE_RIGHT_BASE_ICON = "Rotate right base icon";
+	public static final String ROTATE_LEFT_BASE_ICON = "Rotate left base icon";
+	public static final String ROTATE_180_BASE_ICON = "Rotate 180 base icon";
+	
 	private String name;
 	private String id;
 	private IconCategory parent;
