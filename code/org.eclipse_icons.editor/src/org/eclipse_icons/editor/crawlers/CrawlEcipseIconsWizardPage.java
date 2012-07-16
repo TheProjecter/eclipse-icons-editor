@@ -23,6 +23,10 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.dialogs.ContainerSelectionDialog;
 import org.eclipse_icons.editor.utils.ui.UIUtils;
 
+/**
+ * 
+ * @author Jabier Martinez
+ */
 public class CrawlEcipseIconsWizardPage extends WizardPage {
 	private static final String ORG_ECLIPSE = "org.eclipse.*";
 	String destDir = null;

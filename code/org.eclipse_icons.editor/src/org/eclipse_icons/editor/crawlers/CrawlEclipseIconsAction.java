@@ -5,6 +5,10 @@ import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse_icons.editor.Activator;
 
+/**
+ * 
+ * @author Jabier Martinez
+ */
 public class CrawlEclipseIconsAction extends Action {
 	
 	public CrawlEclipseIconsAction() {

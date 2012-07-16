@@ -3,6 +3,9 @@ package org.eclipse_icons.editor.crawlers;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse_icons.editor.utils.ui.UIUtils;
 
+/**
+ * @author Jabier Martinez
+ */
 public class CrawlEclipseIconsWizard extends Wizard {
 	
 	CrawlEcipseIconsWizardPage crawlEclipseIconsWizardPage = null;
