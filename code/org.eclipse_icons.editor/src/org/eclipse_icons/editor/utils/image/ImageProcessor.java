@@ -72,21 +72,20 @@ public class ImageProcessor {
 			return Utils.createOverlapedImage(overlayImage,baseImage,new Point(x,y));
 		}
 		
-		// FIXME Some images lost transparency information
 		if (id.equals(Icon.ROTATE_LEFT_BASE_ICON)){
-			return new Image(baseImage.getDevice(),Utils.rotate(baseImage.getImageData(), SWT.LEFT));
+			return new Image(baseImage.getDevice(),Utils.rotateOrFlip(baseImage, SWT.LEFT).getImageData());
 		}
 		if (id.equals(Icon.ROTATE_RIGHT_BASE_ICON)){
-			return new Image(baseImage.getDevice(),Utils.rotate(baseImage.getImageData(), SWT.RIGHT));
+			return new Image(baseImage.getDevice(),Utils.rotateOrFlip(baseImage, SWT.RIGHT).getImageData());
 		}
 		if (id.equals(Icon.ROTATE_180_BASE_ICON)){
-			return new Image(baseImage.getDevice(),Utils.rotate(baseImage.getImageData(), SWT.DOWN));
+			return new Image(baseImage.getDevice(),Utils.rotateOrFlip(baseImage, SWT.DOWN).getImageData());
 		}
 		if (id.equals(Icon.FLIP_HORIZONTAL_BASE_ICON)){
-			return new Image(baseImage.getDevice(),Utils.flip(baseImage.getImageData(), false));
+			return new Image(baseImage.getDevice(),Utils.rotateOrFlip(baseImage, SWT.HORIZONTAL).getImageData());
 		}
 		if (id.equals(Icon.FLIP_VERTICAL_BASE_ICON)){
-			return new Image(baseImage.getDevice(),Utils.flip(baseImage.getImageData(), true));
+			return new Image(baseImage.getDevice(),Utils.rotateOrFlip(baseImage, SWT.VERTICAL).getImageData());
 		}
 		
 		
