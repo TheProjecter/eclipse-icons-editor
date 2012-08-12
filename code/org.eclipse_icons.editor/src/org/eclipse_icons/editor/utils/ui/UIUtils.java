@@ -1,15 +1,18 @@
 package org.eclipse_icons.editor.utils.ui;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
 
-import org.eclipse.ui.ide.IDE;
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileStore;
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -21,10 +24,13 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.osgi.service.datalocation.Location;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.ide.IDE;
 import org.eclipse_icons.editor.Activator;
 import org.osgi.framework.Bundle;
 
@@ -149,6 +155,50 @@ public class UIUtils {
 		}
 		return false;
 	}
+	
+	public static boolean isImageFile(IResource resource){
+		return isImageFile(getIResourceAbsPath(resource));
+	}
+	
+	public static boolean isTheResourceContainedInAConcreteFolder(IResource resource, String folderName){
+		IContainer container = resource.getParent();
+		while (container!=null && !(container instanceof IProject)){
+			if (container.getName()!=null && container.getName().equalsIgnoreCase(folderName)){
+				return true;
+			}
+			container = container.getParent();
+		}
+		return false;
+	}
 
+	public static Image getImageFromResource(IResource resource) {
+		try {
+			String absPath = getIResourceAbsPath(resource);
+			return new Image(Display.getDefault(), new FileInputStream(absPath));
+		} catch (FileNotFoundException e) {
+			// TODO improve this
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	// TODO use this in isImageFile also
+	public static String getFileSuffix(final String path) {
+	    String result = null;
+	    if (path != null) {
+	        result = "";
+	        if (path.lastIndexOf('.') != -1) {
+	            result = path.substring(path.lastIndexOf('.'));
+	            if (result.startsWith(".")) {
+	                result = result.substring(1);
+	            }
+	        }
+	    }
+	    return result;
+	}
+
+	public static String getIResourceAbsPath(IResource resource){
+		return resource.getLocation().toOSString();
+	}
 	
 }

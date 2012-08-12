@@ -17,5 +17,30 @@
             name="Eclipse Icons Editor">
       </view>
    </extension>
+   <extension
+         point="org.eclipse.ui.decorators">
+      <decorator
+            class="org.eclipse_icons.editor.label.decorator.IconsFolderLabelDecorator"
+            id="org.eclipse_icons.editor.decorator.icons.folder"
+            label="Icons Folder"
+            state="true">
+         <enablement>
+            <objectClass
+                  name="org.eclipse.core.resources.IFile">
+            </objectClass>
+         </enablement>
+      </decorator>
+      <decorator
+            class="org.eclipse_icons.editor.label.decorator.IconsLabelDecorator"
+            id="org.eclipse_icons.editor.decorator.icons"
+            label="Icons"
+            state="false">
+         <enablement>
+            <objectClass
+                  name="org.eclipse.core.resources.IFile">
+            </objectClass>
+         </enablement>
+      </decorator>
+   </extension>
 
 </plugin>

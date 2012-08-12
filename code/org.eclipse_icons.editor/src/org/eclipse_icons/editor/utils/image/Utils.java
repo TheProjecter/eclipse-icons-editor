@@ -1,5 +1,15 @@
 package org.eclipse_icons.editor.utils.image;
 
+import java.awt.Dimension;
+import java.io.File;
+import java.io.IOException;
+import java.util.Iterator;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.FileImageInputStream;
+import javax.imageio.stream.ImageInputStream;
+
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
@@ -8,6 +18,7 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse_icons.editor.utils.ui.UIUtils;
 
 public class Utils {
 
@@ -134,5 +145,32 @@ public class Utils {
 			return image;
 		}
 	}
+	
+	public static Dimension getImageDim(final String path) {
+	    Dimension result = null;
+	    String suffix = UIUtils.getFileSuffix(path);
+	    Iterator<ImageReader> iter = ImageIO.getImageReadersBySuffix(suffix);
+	    if (iter.hasNext()) {
+	        ImageReader reader = iter.next();
+	        try {
+	            ImageInputStream stream = new FileImageInputStream(new File(path));
+	            reader.setInput(stream);
+	            int width = reader.getWidth(reader.getMinIndex());
+	            int height = reader.getHeight(reader.getMinIndex());
+	            result = new Dimension(width, height);
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        } finally {
+	            reader.dispose();
+	        }
+	    } else {
+	    	// No reader found for given format
+	    	return null;
+	    }
+	    return result;
+	}
+	
+	
+
 
 }
