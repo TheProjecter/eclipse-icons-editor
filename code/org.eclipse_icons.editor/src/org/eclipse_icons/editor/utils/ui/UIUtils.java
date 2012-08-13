@@ -2,7 +2,6 @@ package org.eclipse_icons.editor.utils.ui;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -175,9 +174,8 @@ public class UIUtils {
 		try {
 			String absPath = getIResourceAbsPath(resource);
 			return new Image(Display.getDefault(), new FileInputStream(absPath));
-		} catch (FileNotFoundException e) {
-			// TODO improve this
-			e.printStackTrace();
+		} catch (Exception e) {
+			// If any exception happens return null
 			return null;
 		}
 	}
