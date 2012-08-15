@@ -58,6 +58,23 @@ public class Utils {
 		}
 		return null;
 	}
+	
+	public static int getImageFormatFromExtension(String extension) {
+		if (extension.equalsIgnoreCase("png")){
+			return SWT.IMAGE_PNG;
+		} else if (extension.equalsIgnoreCase("bmp")){
+			return SWT.IMAGE_BMP;
+		} else if (extension.equalsIgnoreCase("gif")){
+			return SWT.IMAGE_GIF;
+		} else if (extension.equalsIgnoreCase("jpg") || extension.equalsIgnoreCase("jpeg")){
+			return SWT.IMAGE_JPEG;
+		} else if (extension.equalsIgnoreCase("tiff")){
+			return SWT.IMAGE_TIFF;
+		} else if (extension.equalsIgnoreCase("ico")){
+			return SWT.IMAGE_ICO;
+		}
+		return SWT.IMAGE_PNG;
+	}
 
 	public static Image cropImage(Image sourceImage, int x, int y, int height,
 			int width) {

@@ -37,6 +37,17 @@ public class UIUtils {
 
 	public static final String[] IMAGE_EXTENSIONS = {"*.gif", "*.png", "*.bmp", "*.jpg"};
 
+	public static void refreshWorkspace() {
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IWorkspaceRoot root = workspace.getRoot();
+		try {
+			root.refreshLocal(IResource.DEPTH_INFINITE,
+							new NullProgressMonitor());
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public static void refreshWorkspace(String fullPath) {
 
 		try {
