@@ -47,7 +47,7 @@
       <editor
             class="org.eclipse_icons.editor.IconsEditorPart"
             default="false"
-            filenames="*.png,*.PNG"
+            filenames="*.png,*.PNG,*.gif,*.GIF"
             icon="icons/view.gif"
             id="org.eclipse_icons.editor.iconEditor"
             name="Icons Transparency Editor">

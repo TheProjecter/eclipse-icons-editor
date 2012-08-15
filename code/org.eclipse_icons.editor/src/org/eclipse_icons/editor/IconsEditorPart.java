@@ -48,10 +48,15 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	public void doSave(IProgressMonitor monitor) {
 		monitor.beginTask("Save", 1);
 		ImageData newImageData = (ImageData) imageData.clone();
+		
 		for (PixelItem pixelItem: pixels){
 			newImageData.setAlpha(pixelItem.realPosition.x, pixelItem.realPosition.y, pixelItem.alpha);
+			if (imageData.getTransparencyType()==SWT.TRANSPARENCY_PIXEL){
+				if (pixelItem.alpha == 0){
+					newImageData.setPixel(pixelItem.realPosition.x, pixelItem.realPosition.y, newImageData.transparentPixel);
+				}
+			}
 		}
-		
 		
 		Image image = new Image(Display.getCurrent(),newImageData);
 		String fileAbsPath = input.getFile().getLocation().toOSString();
@@ -101,7 +106,13 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				int paletteInt = imageData.getPixel(x, y);
 				RGB rgb = imageData.palette.getRGB(paletteInt);
 				pixel.color = new Color(Display.getCurrent(),rgb);
-				pixel.alpha = imageData.getAlpha(x, y);
+				
+				if (imageData.getTransparencyType()==SWT.TRANSPARENCY_PIXEL && imageData.transparentPixel==paletteInt){
+					pixel.alpha = 0;
+				} else {
+					pixel.alpha = imageData.getAlpha(x, y);
+				}
+				
 				pixel.realPosition = new Point(x,y);
 				pixels.add(pixel);
 			}
@@ -124,11 +135,9 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		canvas = createCanvas(parent, new PaintListener() {
             public void paintControl(PaintEvent e) {
                 GC gc = e.gc;
-                Point cext = canvas.getSize();
-                gc.fillRectangle(0, 0, cext.x, cext.y);
                 for (Iterator<PixelItem> i = pixels.iterator(); i.hasNext();) {
-                    PixelItem pi = (PixelItem)i.next();
-                    pi.paint(gc);
+                    PixelItem pixel = (PixelItem)i.next();
+                    pixel.paint(gc);
                 }
             }
 		});
