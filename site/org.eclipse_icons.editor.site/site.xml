@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/org.eclipse_icons.editor.feature_1.0.0.201208160133.jar" id="org.eclipse_icons.editor.feature" version="1.0.0.201208160133">
+   <feature url="features/org.eclipse_icons.editor.feature_1.0.0.201208192101.jar" id="org.eclipse_icons.editor.feature" version="1.0.0.201208192101">
       <category name="EclipseIconsEditor"/>
    </feature>
    <category-def name="EclipseIconsEditor" label="Eclipse Icons Editor"/>
