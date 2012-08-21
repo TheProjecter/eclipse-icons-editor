@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
@@ -39,28 +40,173 @@ import org.eclipse_icons.editor.utils.ui.UIUtils;
 
 /**
  * Eclipse Icons Editor
+ * 
  * @author Jabier Martinez
  */
 public class IconsEditorPart extends EditorPart implements ISaveablePart {
-	
+
 	// Editor
 	public static final String ID = "org.eclipse_icons.editor.iconEditor";
 	private FileEditorInput input;
 	Canvas canvas = null;
+
+	// The original icon dimension
 	int iconHeight;
 	int iconWidth;
+
+	// used for isDirty editor property
 	boolean modified = false;
+
 	ImageData imageData;
+
+	// pixels list. Size: iconWidth * iconHeight
 	protected List<PixelItem> pixels = new ArrayList<PixelItem>();
-	boolean drawing = false;
 	
+	PixelItem colorPickerSelection = null;
+
+	// Whether the user is drawing/erasing something
+	boolean drawing = false;
+
+	// States
+	private ToolItem colorPickerToolItem;
+	private ToolItem paintToolItem;
+	private ToolItem eraseToolItem;
+
 	// Zoom
 	private static final int ZOOM_MAXIMUM = 50;
 	private static final int ZOOM_MINIMUM = 1;
 	private static final int ZOOM_INITIAL = 20;
 	private Scale zoomScale = null;
 	int pixelLength = ZOOM_INITIAL;
+
+	@Override
+	public void init(IEditorSite site, IEditorInput input)
+			throws PartInitException {
+		if (!(input instanceof FileEditorInput)) {
+			throw new RuntimeException("Wrong input");
+		}
+		this.input = (FileEditorInput) input;
+		setSite(site);
+		setInput(input);
 	
+		// Sets the name of the editor with file name
+		setPartName(((FileEditorInput) input).getName());
+	
+		imageData = UIUtils.getImageFromResource(this.input.getFile())
+				.getImageData();
+		iconWidth = imageData.width;
+		iconHeight = imageData.height;
+		intializePixels(imageData);
+	}
+
+	@Override
+	public void createPartControl(Composite parent_original) {
+	
+		GridLayout gridLayout = new GridLayout();
+		gridLayout.numColumns = 2;
+		parent_original.setLayout(gridLayout);
+	
+		ToolBar toolBar = new ToolBar(parent_original, SWT.FLAT);
+	
+		paintToolItem = new ToolItem(toolBar, SWT.CHECK);
+		paintToolItem.setToolTipText("Paint");
+		paintToolItem.setSelection(false);
+		paintToolItem.setImage(Activator.getImageDescriptor(
+				"icons/editor/paint.png").createImage());
+		paintToolItem.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				// for the moment, only selected colors with the color picker is allowed
+				if (colorPickerSelection==null){
+					MessageDialog.openInformation(Display.getDefault().getActiveShell(), "Info", "Pick a color from the image before painting");
+					paintToolItem.setSelection(false);
+					colorPickerToolItem.setSelection(true);
+					eraseToolItem.setSelection(false);
+				} else {
+					paintToolItem.setSelection(true);
+					colorPickerToolItem.setSelection(false);
+					eraseToolItem.setSelection(false);
+				}
+			}
+		});
+	
+		colorPickerToolItem = new ToolItem(toolBar, SWT.CHECK);
+		colorPickerToolItem.setToolTipText("Pick Color");
+		colorPickerToolItem.setSelection(false);
+		colorPickerToolItem.setImage(Activator.getImageDescriptor(
+				"icons/editor/colorPicker.png").createImage());
+		colorPickerToolItem.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				paintToolItem.setSelection(false);
+				colorPickerToolItem.setSelection(true);
+				eraseToolItem.setSelection(false);
+			}
+		});
+	
+		new ToolItem(toolBar, SWT.SEPARATOR);
+	
+		eraseToolItem = new ToolItem(toolBar, SWT.CHECK);
+		eraseToolItem.setToolTipText("Erase");
+		eraseToolItem.setSelection(true);
+		eraseToolItem.setImage(Activator.getImageDescriptor(
+				"icons/editor/erase.png").createImage());
+		eraseToolItem.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				paintToolItem.setSelection(false);
+				colorPickerToolItem.setSelection(false);
+				eraseToolItem.setSelection(true);
+			}
+		});
+	
+		new ToolItem(toolBar, SWT.SEPARATOR);
+	
+		addZoomToolItems(toolBar);
+	
+		GridData gridData = new GridData(GridData.FILL, SWT.BEGINNING, true,
+				false);
+		toolBar.setLayoutData(gridData);
+	
+		zoomScale = new Scale(parent_original, SWT.NONE);
+		zoomScale.setToolTipText("Zoom");
+		zoomScale.setMinimum(ZOOM_MINIMUM);
+		zoomScale.setMaximum(ZOOM_MAXIMUM);
+		zoomScale.setSelection(ZOOM_INITIAL);
+		zoomScale.setIncrement(1);
+	
+		zoomScale.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event event) {
+				applyZoom(zoomScale.getSelection());
+			}
+		});
+	
+		gridData = new GridData(SWT.RIGHT, SWT.BEGINNING, false, false);
+		zoomScale.setLayoutData(gridData);
+	
+		canvas = createCanvas(parent_original, new PaintListener() {
+			public void paintControl(PaintEvent e) {
+				GC gc = e.gc;
+				// don't show rectangle if it is zoom 1
+				if (pixelLength != 1) {
+					gc.drawRectangle(0, 0, pixelLength * iconWidth, pixelLength
+							* iconHeight);
+				}
+				// paint pixels
+				for (Iterator<PixelItem> i = pixels.iterator(); i.hasNext();) {
+					PixelItem pixel = (PixelItem) i.next();
+					pixel.paint(gc);
+				}
+			}
+		});
+	
+		gridData = new GridData(GridData.FILL, GridData.FILL, true, true);
+		gridData.horizontalSpan = 2;
+		canvas.setLayoutData(gridData);
+	
+		// Mouse listeners to draw
+		createCanvasMouseListeners();
+	
+		applyZoom(ZOOM_INITIAL);
+	}
+
 	@Override
 	public void doSave(IProgressMonitor monitor) {
 		monitor.beginTask("Save", 1);
@@ -84,7 +230,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		String fileAbsPath = input.getFile().getLocation().toOSString();
 		int imageFormat = Utils.getImageFormatFromExtension(input.getFile()
 				.getFileExtension());
-		
+
 		// Save it
 		Utils.saveIconToFile(image, fileAbsPath, imageFormat);
 
@@ -102,26 +248,6 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	@Override
 	public void doSaveAs() {
 		// TODO
-	}
-
-	@Override
-	public void init(IEditorSite site, IEditorInput input)
-			throws PartInitException {
-		if (!(input instanceof FileEditorInput)) {
-			throw new RuntimeException("Wrong input");
-		}
-		this.input = (FileEditorInput) input;
-		setSite(site);
-		setInput(input);
-
-		// Sets the name of the editor with file name
-		setPartName(((FileEditorInput) input).getName());
-
-		imageData = UIUtils.getImageFromResource(this.input.getFile())
-				.getImageData();
-		iconWidth = imageData.width;
-		iconHeight = imageData.height;
-		intializePixels(imageData);
 	}
 
 	/**
@@ -161,146 +287,136 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		return false;
 	}
 
-	@Override
-	public void createPartControl(Composite parent_original) {
-
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 2;
-		parent_original.setLayout(gridLayout);
-		
-		ToolBar toolBar = new ToolBar (parent_original, SWT.FLAT);
-		ToolItem erase = new ToolItem (toolBar, SWT.CHECK);
-		erase.setToolTipText("Erase");
-		erase.setSelection(true);
-		erase.setImage(Activator.getImageDescriptor("icons/editor/erase.png").createImage());
-		erase.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				((ToolItem)e.getSource()).setSelection(true);
-			}
-		});
-		
-		@SuppressWarnings("unused")
-		ToolItem separator = new ToolItem(toolBar, SWT.SEPARATOR);
-		
-		ToolItem zoomOriginal = new ToolItem (toolBar, SWT.PUSH);
-		zoomOriginal.setToolTipText("Original size");
-		zoomOriginal.setImage(Activator.getImageDescriptor("icons/editor/zoomOriginal.png").createImage());
-		zoomOriginal.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				applyZoom(1);
-			}
-		});
-		
-		ToolItem zoomIn = new ToolItem (toolBar, SWT.PUSH);
-		zoomIn.setToolTipText("Zoom In");
-		zoomIn.setImage(Activator.getImageDescriptor("icons/editor/zoomIn.png").createImage());
-		zoomIn.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				applyZoom(pixelLength + 10);
-			}
-		});
-		
-		ToolItem zoomOut = new ToolItem (toolBar, SWT.PUSH);
-		zoomOut.setToolTipText("Zoom Out");
-		zoomOut.setImage(Activator.getImageDescriptor("icons/editor/zoomOut.png").createImage());
-		zoomOut.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				applyZoom(pixelLength - 10);
-			}
-		});
-		
-		GridData gridData = new GridData(GridData.FILL, SWT.BEGINNING, true, false);
-		toolBar.setLayoutData(gridData);
-		
-		zoomScale = new Scale (parent_original, SWT.NONE);
-		zoomScale.setToolTipText("Zoom");
-		zoomScale.setMinimum(ZOOM_MINIMUM);
-		zoomScale.setMaximum(ZOOM_MAXIMUM);
-		zoomScale.setSelection(ZOOM_INITIAL);
-		zoomScale.setIncrement(1);
-		
-		zoomScale.addListener(SWT.Selection, new Listener() {
-		      public void handleEvent(Event event) {
-		        applyZoom(zoomScale.getSelection());
-		      }
-		    });
-		
-		
-		gridData = new GridData(SWT.RIGHT, SWT.BEGINNING, false, false);
-		zoomScale.setLayoutData(gridData);
-		
-		canvas = createCanvas(parent_original, new PaintListener() {
-			public void paintControl(PaintEvent e) {
-				GC gc = e.gc;
-				gc.drawRectangle(0, 0, pixelLength * iconWidth, pixelLength
-						* iconHeight);
-				for (Iterator<PixelItem> i = pixels.iterator(); i.hasNext();) {
-					PixelItem pixel = (PixelItem) i.next();
-					pixel.paint(gc);
-				}
-			}
-		});
-		
-		gridData = new GridData(GridData.FILL, GridData.FILL, true, true);
-		gridData.horizontalSpan = 2;
-		canvas.setLayoutData(gridData);
-
-		// Mouse listeners to draw
+	private void createCanvasMouseListeners() {
+		// Mouse Down
 		canvas.addListener(SWT.MouseDown, new Listener() {
 			public void handleEvent(Event e) {
-				drawing = true;
-				paintTransparentPixel(e.x, e.y);
+
+				PixelItem selectedPixel = getCanvasPixel(e.x, e.y);
+				if (selectedPixel != null) {
+					// Erase
+					if (eraseToolItem.getSelection()) {
+						drawing = true;
+						paintTransparentPixel(selectedPixel);
+					}
+					// Paint
+					else if (paintToolItem.getSelection()) {
+						drawing = true;
+						paintPixel(selectedPixel);
+					}
+					// Pick Color
+					else if (colorPickerToolItem.getSelection()) {
+						drawing = false;
+						paintToolItem.setSelection(true);
+						colorPickerToolItem.setSelection(false);
+						eraseToolItem.setSelection(false);
+						colorPickerSelection = (PixelItem) selectedPixel.clone();
+					}
+				}
 			}
+
 		});
 
+		// Mouse Move
 		canvas.addListener(SWT.MouseMove, new Listener() {
 			public void handleEvent(Event e) {
-				if (drawing) {
-					paintTransparentPixel(e.x, e.y);
+
+				PixelItem selectedPixel = getCanvasPixel(e.x, e.y);
+				if (drawing && selectedPixel != null) {
+					// Erase
+					if (eraseToolItem.getSelection()) {
+						paintTransparentPixel(selectedPixel);
+					}
+					// Paint
+					else if (paintToolItem.getSelection()) {
+						paintPixel(selectedPixel);
+					}
 				}
 			}
 		});
 
+		// Mouse Up
 		canvas.addListener(SWT.MouseUp, new Listener() {
 			public void handleEvent(Event e) {
 				drawing = false;
 			}
 		});
+	}
 
-		applyZoom(ZOOM_INITIAL);
+	private void addZoomToolItems(ToolBar toolBar) {
+		ToolItem zoomOriginal = new ToolItem(toolBar, SWT.PUSH);
+		zoomOriginal.setToolTipText("Original size");
+		zoomOriginal.setImage(Activator.getImageDescriptor(
+				"icons/editor/zoomOriginal.png").createImage());
+		zoomOriginal.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				applyZoom(1);
+			}
+		});
+
+		ToolItem zoomIn = new ToolItem(toolBar, SWT.PUSH);
+		zoomIn.setToolTipText("Zoom In");
+		zoomIn.setImage(Activator.getImageDescriptor("icons/editor/zoomIn.png")
+				.createImage());
+		zoomIn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				applyZoom(pixelLength + 10);
+			}
+		});
+
+		ToolItem zoomOut = new ToolItem(toolBar, SWT.PUSH);
+		zoomOut.setToolTipText("Zoom Out");
+		zoomOut.setImage(Activator.getImageDescriptor(
+				"icons/editor/zoomOut.png").createImage());
+		zoomOut.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				applyZoom(pixelLength - 10);
+			}
+		});
 	}
 
 	@Override
 	public void setFocus() {
 	}
 
+	private void paintTransparentPixel(PixelItem pixel) {
+		// check if change is needed
+		if (pixel.alpha != 0) {
+			// set alpha to 0
+			pixel.alpha = 0;
+			notifyPixelModification(pixel);
+		}
+	}
+
+	private void paintPixel(PixelItem pixel) {
+		// check if change is needed
+		if (pixel.alpha != colorPickerSelection.alpha ||
+				!pixel.color.equals(colorPickerSelection.color)){
+			pixel.alpha = colorPickerSelection.alpha;
+			pixel.color = colorPickerSelection.color;
+			notifyPixelModification(pixel);
+		}
+	}
 	
-	/**
-	 * Paint transparent pixel
-	 * @param x
-	 * @param y
-	 */
-	private void paintTransparentPixel(int x, int y) {
-		// find the selected pixel
+	private void notifyPixelModification(PixelItem pixel){
+		// force isDirty method of the EditPart to register the
+		// modification
+		modified = true;
+		firePropertyChange(IEditorPart.PROP_DIRTY);
+		// only redraw the modified one
+		canvas.redraw(pixel.pixelRectangle.x, pixel.pixelRectangle.y,
+				pixel.pixelRectangle.width, pixel.pixelRectangle.height,
+				false);
+	}
+
+	private PixelItem getCanvasPixel(int x, int y) {
+		// TODO this could be optimized
 		for (PixelItem pixel : pixels) {
 			if (pixel.pixelRectangle.contains(x, y)) {
-				// check if change is needed
-				if (pixel.alpha != 0) {
-					// set alpha to 0
-					pixel.alpha = 0;
-					// force isDirty method of the EditPart to register the
-					// modification
-					modified = true;
-					firePropertyChange(IEditorPart.PROP_DIRTY);
-					// only redraw the modified one
-					canvas.redraw(pixel.pixelRectangle.x,
-							pixel.pixelRectangle.y, pixel.pixelRectangle.width,
-							pixel.pixelRectangle.height, false);
-				}
-				// already processed
-				break;
+				return pixel;
 			}
 		}
+		return null;
 	}
 
 	protected Canvas createCanvas(Composite parent, PaintListener pl) {
@@ -315,7 +431,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	 * Pixel item class to be shown in the canvas and also used to save the
 	 * modified image
 	 */
-	protected class PixelItem {
+	protected class PixelItem implements Cloneable {
 		public Rectangle pixelRectangle;
 		public Color color;
 		public int alpha;
@@ -327,10 +443,21 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 			gc.fillRectangle(pixelRectangle.x, pixelRectangle.y,
 					pixelRectangle.width, pixelRectangle.height);
 		}
+		
+		public Object clone() {
+			Object o = null;
+			try {
+				 o = super.clone();
+			} catch (CloneNotSupportedException e) {
+				e.printStackTrace();
+			}
+			return o;
+		}
 	}
 
 	/**
 	 * Update pixel positions based on new pixelLength
+	 * 
 	 * @param pixelLength_p
 	 */
 	public void updatePixelsPositions(int pixelLength_p) {
@@ -346,16 +473,17 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 			}
 		}
 	}
-	
+
 	/**
 	 * Apply Zoom
+	 * 
 	 * @param zoomValue
 	 */
-	public void applyZoom(int zoomValue){
+	public void applyZoom(int zoomValue) {
 		// zoomValue inside zoom boundaries
-		if (zoomValue<ZOOM_MINIMUM){
+		if (zoomValue < ZOOM_MINIMUM) {
 			zoomValue = ZOOM_MINIMUM;
-		} else if (zoomValue>ZOOM_MAXIMUM){
+		} else if (zoomValue > ZOOM_MAXIMUM) {
 			zoomValue = ZOOM_MAXIMUM;
 		}
 		// update and redraw
@@ -364,13 +492,13 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		zoomScale.setSelection(pixelLength);
 		canvas.redraw();
 	}
-	
+
 	@Override
-    public void dispose() {
-    	super.dispose();
-    	pixels.clear();
-    	pixels = null;
-    	imageData = null;
-    }
+	public void dispose() {
+		super.dispose();
+		pixels.clear();
+		pixels = null;
+		imageData = null;
+	}
 
 }
