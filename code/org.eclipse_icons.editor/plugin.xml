@@ -50,7 +50,7 @@
             extensions="png,PNG,gif,GIF"
             icon="icons/view.gif"
             id="org.eclipse_icons.editor.iconEditor"
-            name="Icons Transparency Editor">
+            name="Icon Editor">
       </editor>
    </extension>
 

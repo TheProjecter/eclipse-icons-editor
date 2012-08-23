@@ -184,17 +184,32 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		canvas = createCanvas(parent_original, new PaintListener() {
 			public void paintControl(PaintEvent e) {
 				GC gc = e.gc;
-				// don't show rectangle if it is zoom 1
-				if (pixelLength != 1) {
-					gc.drawRectangle(0, 0, pixelLength * iconWidth, pixelLength
-							* iconHeight);
-				}
+				
+				// global information for painting the background
+				int halfPixel = pixelLength/2;
+				
 				// paint pixels
 				for (Iterator<PixelItem> i = pixels.iterator(); i.hasNext();) {
 					PixelItem pixel = (PixelItem) i.next();
+					// paint background squares for transparent (only if not original size)
+					if (pixelLength != 1 && pixel.alpha!=255){
+						gc.setAlpha(255);
+						gc.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
+						gc.fillRectangle(pixel.pixelRectangle.x,pixel.pixelRectangle.y,halfPixel, halfPixel);
+						gc.fillRectangle(pixel.pixelRectangle.x+halfPixel,pixel.pixelRectangle.y+halfPixel, halfPixel, halfPixel);
+					}
+					// paint the pixel itself
 					pixel.paint(gc);
 				}
+				
+				// paint boundary rectangle (only if not original size)
+				if (pixelLength != 1) {
+					gc.setAlpha(255);
+					gc.drawRectangle(0, 0, pixelLength * iconWidth, pixelLength
+							* iconHeight);
+				}
 			}
+
 		});
 	
 		gridData = new GridData(GridData.FILL, GridData.FILL, true, true);
@@ -262,7 +277,8 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				int paletteInt = imageData.getPixel(x, y);
 				RGB rgb = imageData.palette.getRGB(paletteInt);
 				pixel.color = new Color(Display.getCurrent(), rgb);
-
+				
+				// Take care of transparency types
 				if (imageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL
 						&& imageData.transparentPixel == paletteInt) {
 					pixel.alpha = 0;
@@ -320,16 +336,18 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		// Mouse Move
 		canvas.addListener(SWT.MouseMove, new Listener() {
 			public void handleEvent(Event e) {
-
-				PixelItem selectedPixel = getCanvasPixel(e.x, e.y);
-				if (drawing && selectedPixel != null) {
-					// Erase
-					if (eraseToolItem.getSelection()) {
-						paintTransparentPixel(selectedPixel);
-					}
-					// Paint
-					else if (paintToolItem.getSelection()) {
-						paintPixel(selectedPixel);
+				// Only process this if drawing
+				if (drawing){
+					PixelItem selectedPixel = getCanvasPixel(e.x, e.y);
+					if (selectedPixel != null) {
+						// Erase
+						if (eraseToolItem.getSelection()) {
+							paintTransparentPixel(selectedPixel);
+						}
+						// Paint
+						else if (paintToolItem.getSelection()) {
+							paintPixel(selectedPixel);
+						}
 					}
 				}
 			}
@@ -401,24 +419,46 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	private void notifyPixelModification(PixelItem pixel){
 		// force isDirty method of the EditPart to register the
 		// modification
-		modified = true;
-		firePropertyChange(IEditorPart.PROP_DIRTY);
+		if (!modified){
+			modified = true;
+			firePropertyChange(IEditorPart.PROP_DIRTY);
+		}
 		// only redraw the modified one
 		canvas.redraw(pixel.pixelRectangle.x, pixel.pixelRectangle.y,
 				pixel.pixelRectangle.width, pixel.pixelRectangle.height,
 				false);
 	}
 
+	/**
+	 * Get the pixel at a given canvas relative position
+	 * @param x
+	 * @param y
+	 * @return the pixel at this position or null
+	 */
 	private PixelItem getCanvasPixel(int x, int y) {
-		// TODO this could be optimized
-		for (PixelItem pixel : pixels) {
-			if (pixel.pixelRectangle.contains(x, y)) {
-				return pixel;
-			}
+		
+		// Check that is inside the boundaries
+		// when moving the mouse you can for example negative values from the event
+		if (x < 0 || y < 0 || x > iconWidth*pixelLength || y > iconHeight*pixelLength){
+			return null;
 		}
-		return null;
+		
+		// Calculate actual coordinates
+		int pixelX = x / pixelLength;
+		int pixelY = y / pixelLength;
+		
+		// Re-check after the / operation
+		if (pixelX >= iconWidth || pixelY >= iconHeight){
+			return null;
+		}
+		
+		// Get the actual position in the array
+		int positionInArray = pixelY * iconWidth + pixelX;
+		
+		return pixels.get(positionInArray);
 	}
 
+	
 	protected Canvas createCanvas(Composite parent, PaintListener pl) {
 		Canvas c = new Canvas(parent, SWT.NONE);
 		if (pl != null) {
