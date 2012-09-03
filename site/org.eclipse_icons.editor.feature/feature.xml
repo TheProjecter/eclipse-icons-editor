@@ -2,7 +2,7 @@
 <feature
       id="org.eclipse_icons.editor.feature"
       label="Eclipse Icons Editor Feature"
-      version="1.0.0.qualifier"
+      version="2.0.0.qualifier"
       provider-name="Jabier Martinez">
 
    <description url="http://code.google.com/a/eclipselabs.org/p/eclipse-icons-editor/">

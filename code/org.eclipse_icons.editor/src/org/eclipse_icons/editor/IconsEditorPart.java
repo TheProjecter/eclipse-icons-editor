@@ -4,7 +4,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
@@ -33,9 +39,11 @@ import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.ISaveablePart;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.EditorPart;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse_icons.editor.utils.image.Utils;
+import org.eclipse_icons.editor.utils.ui.SaveAsContainerSelectionDialog;
 import org.eclipse_icons.editor.utils.ui.UIUtils;
 
 /**
@@ -222,8 +230,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		applyZoom(ZOOM_INITIAL);
 	}
 
-	@Override
-	public void doSave(IProgressMonitor monitor) {
+	public void performSave(String fileAbsPath, IProgressMonitor monitor) {
 		monitor.beginTask("Save", 1);
 		ImageData newImageData = (ImageData) imageData.clone();
 
@@ -242,16 +249,11 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 		// Create image
 		Image image = new Image(Display.getCurrent(), newImageData);
-		String fileAbsPath = input.getFile().getLocation().toOSString();
 		int imageFormat = Utils.getImageFormatFromExtension(input.getFile()
 				.getFileExtension());
 
 		// Save it
 		Utils.saveIconToFile(image, fileAbsPath, imageFormat);
-
-		// Set editor as no dirty
-		modified = false;
-		firePropertyChange(IEditorPart.PROP_DIRTY);
 
 		monitor.worked(1);
 		monitor.done();
@@ -261,8 +263,28 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	}
 
 	@Override
+	public void doSave(IProgressMonitor monitor) {
+		performSave(input.getFile().getLocation().toOSString(), monitor);
+		
+		// Set editor as no dirty
+		modified = false;
+		firePropertyChange(IEditorPart.PROP_DIRTY);
+	}
+	
+	@Override
 	public void doSaveAs() {
-		// TODO
+		SaveAsContainerSelectionDialog dialog = new SaveAsContainerSelectionDialog(Display.getCurrent().getActiveShell(),ResourcesPlugin
+				.getWorkspace().getRoot(), false, "Select image container and name",input.getFile().getName());
+		if (dialog.open() == Dialog.OK){
+			IPath selectedContainer = (IPath) dialog.getResult()[0];
+			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		    IResource res = root.findMember(selectedContainer);
+		    String location = res.getLocation().append(dialog.getFileName()).toOSString();
+			performSave(location, new NullProgressMonitor());
+			
+			// Open the file
+			UIUtils.openFile(location);
+		}
 	}
 
 	/**
@@ -299,8 +321,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 	@Override
 	public boolean isSaveAsAllowed() {
-		// not yet
-		return false;
+		return true;
 	}
 
 	private void createCanvasMouseListeners() {
