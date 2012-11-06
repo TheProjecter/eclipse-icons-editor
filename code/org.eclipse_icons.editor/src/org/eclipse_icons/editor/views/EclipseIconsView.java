@@ -57,6 +57,8 @@ import org.eclipse.ui.part.ResourceTransfer;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse_icons.editor.Activator;
 import org.eclipse_icons.editor.crawlers.CrawlEclipseIconsAction;
+import org.eclipse_icons.editor.crawlers.CrawlISharedImagesAction;
+import org.eclipse_icons.editor.tools.IconsFolderInBuildConfigurationAction;
 import org.eclipse_icons.editor.utils.image.Utils;
 import org.eclipse_icons.editor.utils.ui.UIUtils;
 
@@ -493,6 +495,9 @@ public class EclipseIconsView extends ViewPart {
 	
 	private void fillLocalPullDown(IMenuManager manager) {
 		manager.add(new CrawlEclipseIconsAction());
+		manager.add(new CrawlISharedImagesAction());
+		// TODO finish this development. IconsFolderInBuildConfigurationAction
+		// manager.add(new IconsFolderInBuildConfigurationAction());
 	}
 
 	/**

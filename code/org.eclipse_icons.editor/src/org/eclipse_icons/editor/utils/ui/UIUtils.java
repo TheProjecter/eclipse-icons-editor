@@ -9,8 +9,10 @@ import java.util.Collections;
 
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileStore;
+import org.eclipse.core.resources.IBuildConfiguration;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
@@ -170,6 +172,25 @@ public class UIUtils {
 		return isImageFile(getIResourceAbsPath(resource));
 	}
 	
+	public static boolean folderContainsImages(IFolder folder){
+		try {
+			for (IResource resource: folder.members()){
+				if (resource instanceof IFolder){
+					if (folderContainsImages((IFolder)resource)){
+						return true;
+					}
+				} else {
+					if (isImageFile(resource)){
+						return true;
+					}
+				}
+			}
+		} catch (CoreException e) {
+			return false;
+		}
+		return false;
+	}
+	
 	public static boolean isTheResourceContainedInAConcreteFolder(IResource resource, String folderName){
 		IContainer container = resource.getParent();
 		while (container!=null && !(container instanceof IProject)){
@@ -208,6 +229,19 @@ public class UIUtils {
 
 	public static String getIResourceAbsPath(IResource resource){
 		return resource.getLocation().toOSString();
+	}
+
+	public static boolean isResourceInBuildXML(IProject project,
+			IResource resource) {
+		try {
+			IBuildConfiguration[] buildConfigs = project.getBuildConfigs();
+			for (IBuildConfiguration buildConfig : buildConfigs){
+				System.out.println(buildConfig);
+			}
+		} catch (CoreException e) {
+			return false;
+		}
+		return false;
 	}
 	
 }
