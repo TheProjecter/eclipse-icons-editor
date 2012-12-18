@@ -8,6 +8,8 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.ActionContributionItem;
+import org.eclipse.jface.action.IMenuCreator;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
@@ -32,6 +34,7 @@ import org.eclipse.swt.dnd.FileTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
@@ -465,7 +468,6 @@ public class EclipseIconsView extends ViewPart {
 	private void contributeToActionBars() {
 		IActionBars bars = getViewSite().getActionBars();
 		fillLocalToolBar(bars.getToolBarManager());
-		fillLocalPullDown(bars.getMenuManager());
 	}
 
 	private void fillContextMenu(IMenuManager manager) {
@@ -483,13 +485,53 @@ public class EclipseIconsView extends ViewPart {
 		manager.add(baseNextIconAction);
 		manager.add(new Separator());
 		manager.add(saveAction);
+
+		Action act = new Action("Crawl/Reuse", SWT.DROP_DOWN) {};
+		act.setImageDescriptor(Activator
+				.getImageDescriptor("icons/crawlEclipseIconsAction.png"));
+		act.setMenuCreator(new CrawlMenuCreator() {
+		});
+		manager.add(new Separator());
+		manager.add(act);
+
 	}
 
-	private void fillLocalPullDown(IMenuManager manager) {
-		manager.add(new CrawlEclipseIconsAction());
-		manager.add(new CrawlISharedImagesAction());
-		// TODO finish this development. IconsFolderInBuildConfigurationAction
-		// manager.add(new IconsFolderInBuildConfigurationAction());
+	class CrawlMenuCreator implements IMenuCreator {
+
+		private MenuManager pullDownMenuManager;
+
+		private void createDropDownMenuMgr() {
+			if (pullDownMenuManager == null) {
+				pullDownMenuManager = new MenuManager();
+			}
+		}
+
+		@Override
+		public void dispose() {
+			if (pullDownMenuManager != null) {
+				pullDownMenuManager.dispose();
+				pullDownMenuManager = null;
+			}
+		}
+
+		@Override
+		public Menu getMenu(Control parent) {
+			createDropDownMenuMgr();
+			Menu menu = new Menu(parent);
+			ActionContributionItem item = new ActionContributionItem(
+					new CrawlEclipseIconsAction());
+			item.fill(menu, -1);
+			ActionContributionItem item2 = new ActionContributionItem(
+					new CrawlISharedImagesAction());
+			item2.fill(menu, -1);
+			return menu;
+		}
+
+		@Override
+		public Menu getMenu(Menu parent) {
+			// No use
+			return null;
+		}
 	}
 
 	/**
