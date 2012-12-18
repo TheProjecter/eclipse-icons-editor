@@ -2,7 +2,7 @@
 <feature
       id="org.eclipse_icons.editor.feature"
       label="Eclipse Icons Editor Feature"
-      version="2.0.0.qualifier"
+      version="2.0.1.qualifier"
       provider-name="Jabier Martinez"
       plugin="org.eclipse_icons.editor">
 
@@ -10,12 +10,12 @@
       Eclipse Icons Editor
    </description>
 
-   <copyright url="http://www.example.com/copyright">
+   <copyright url="http://code.google.com/a/eclipselabs.org/p/eclipse-icons-editor/">
       Copyright
    </copyright>
 
-   <license url="http://www.example.com/license">
-      [Enter License Description here.]
+   <license url="http://code.google.com/a/eclipselabs.org/p/eclipse-icons-editor/">
+      License
    </license>
 
    <plugin
