@@ -3,7 +3,8 @@
       id="org.eclipse_icons.editor.feature"
       label="Eclipse Icons Editor Feature"
       version="2.0.0.qualifier"
-      provider-name="Jabier Martinez">
+      provider-name="Jabier Martinez"
+      plugin="org.eclipse_icons.editor">
 
    <description url="http://code.google.com/a/eclipselabs.org/p/eclipse-icons-editor/">
       Eclipse Icons Editor
