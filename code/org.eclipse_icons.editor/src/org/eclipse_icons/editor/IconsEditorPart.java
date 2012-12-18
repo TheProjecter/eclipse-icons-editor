@@ -90,7 +90,9 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	public void init(IEditorSite site, IEditorInput input)
 			throws PartInitException {
 		if (!(input instanceof FileEditorInput)) {
-			throw new RuntimeException("Wrong input");
+			// TODO improve error handling. For example dropping an icon from the icons view
+			MessageDialog.openError(Display.getCurrent().getActiveShell(), "Icons editor", "Wrong input. Try to save the resource in the workspace first.");
+			return;
 		}
 		this.input = (FileEditorInput) input;
 		setSite(site);

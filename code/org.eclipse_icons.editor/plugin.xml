@@ -14,7 +14,7 @@
             class="org.eclipse_icons.editor.views.EclipseIconsView"
             icon="icons/view.gif"
             id="org.eclipse_icons.editor.views.EclipseIconsEditor"
-            name="Eclipse Icons Editor">
+            name="Icons Manager">
       </view>
    </extension>
    <extension
