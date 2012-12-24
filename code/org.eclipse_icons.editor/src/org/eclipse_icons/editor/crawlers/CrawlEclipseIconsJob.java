@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -38,6 +40,10 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse_icons.editor.utils.ui.UIUtils;
 
 /**
@@ -111,8 +117,8 @@ public class CrawlEclipseIconsJob extends Job {
 		writer.println("These icons were pulled from an Eclipse distribution.");
 		writer.println(iconCount + " icons from " + pluginCount + " plugins.");
 
-		writeIcons("16x16 Icons", writer, get16x16Icons(icons), 4);
-		writeIcons("Overlay Icons", writer, getOverlayIcons(icons), 4);
+		writeIcons("16x16 Icons", writer, get16x16Icons(icons), 3);
+		writeIcons("Overlay Icons", writer, getOverlayIcons(icons), 3);
 		writeIcons("Wizard Images", writer, getWizardIcons(icons), 3);
 
 		writer.println("<br/><div class=\"footer\">Generated "
@@ -379,7 +385,8 @@ public class CrawlEclipseIconsJob extends Job {
 			// workUnits are the plugins length
 			// plus one for creating the index.html
 			// plus one for refreshing
-			int workUnits = srcDir.listFiles().length + 2;
+			// plus one for opening browser
+			int workUnits = srcDir.listFiles().length + 3;
 			monitor.beginTask("Processing " + srcDir.getPath() + "...",
 					workUnits);
 
@@ -405,6 +412,17 @@ public class CrawlEclipseIconsJob extends Job {
 
 			monitor.subTask("Refreshing workspace");
 			UIUtils.refreshWorkspace(destDir.getAbsolutePath());
+			monitor.worked(1);
+			
+			monitor.subTask("Opening external browser");
+			try {
+				URL url = new URL(destDir.toURI().toURL(),"index.html");
+				PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(url);
+			} catch (PartInitException e1) {
+				MessageDialog.openError(Display.getCurrent().getActiveShell(), "Error", "Error opening the external Browser\nindex.html at "+ destDir);
+			} catch (MalformedURLException e1) {
+				e1.printStackTrace();
+			}
 			monitor.worked(1);
 
 		} catch (OperationCanceledException e) {

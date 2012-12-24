@@ -51,6 +51,7 @@ import org.eclipse.ui.part.ViewPart;
 import org.eclipse_icons.editor.Activator;
 import org.eclipse_icons.editor.crawlers.CrawlEclipseIconsAction;
 import org.eclipse_icons.editor.crawlers.CrawlISharedImagesAction;
+import org.eclipse_icons.editor.crawlers.CrawWebAction;
 import org.eclipse_icons.editor.utils.image.Utils;
 import org.eclipse_icons.editor.utils.ui.UIUtils;
 
@@ -198,28 +199,29 @@ public class EclipseIconsView extends ViewPart {
 					IconCategory.COLOR);
 			Icon iconDisable = new Icon(Icon.COLOR_DISABLED, "base_disabled");
 			Icon iconGray = new Icon(Icon.COLOR_GRAY, "base_gray");
-			Icon iconColor1 = new Icon(Icon.COLOR_RGB + "0,0,0", "base_black");
-			Icon iconColor2 = new Icon(Icon.COLOR_RGB + "0,0,255", "base_blue");
-			Icon iconColor3 = new Icon(Icon.COLOR_RGB + "0,255,0", "base_green");
-			Icon iconColor4 = new Icon(Icon.COLOR_RGB + "0,255,255",
-					"base_cyan");
-			Icon iconColor5 = new Icon(Icon.COLOR_RGB + "255,0,0", "base_red");
-			Icon iconColor6 = new Icon(Icon.COLOR_RGB + "255,0,255",
-					"base_pink");
-			Icon iconColor7 = new Icon(Icon.COLOR_RGB + "255,255,0",
-					"base_yellow");
 			Icon iconColor8 = new Icon(Icon.COLOR_RGB + "255,255,255",
 					"base_white");
+			Icon iconColor7 = new Icon(Icon.COLOR_RGB + "255,255,0",
+					"base_yellow");			
+			Icon iconColor6 = new Icon(Icon.COLOR_RGB + "255,0,255",
+					"base_pink");
+			Icon iconColor5 = new Icon(Icon.COLOR_RGB + "255,0,0", "base_red");
+			Icon iconColor4 = new Icon(Icon.COLOR_RGB + "0,255,255",
+					"base_cyan");
+			Icon iconColor3 = new Icon(Icon.COLOR_RGB + "0,255,0", "base_green");
+			Icon iconColor2 = new Icon(Icon.COLOR_RGB + "0,0,255", "base_blue");
+			Icon iconColor1 = new Icon(Icon.COLOR_RGB + "0,0,0", "base_black");
+
 			colorCategory.addIcon(iconDisable);
 			colorCategory.addIcon(iconGray);
-			colorCategory.addIcon(iconColor1);
-			colorCategory.addIcon(iconColor2);
-			colorCategory.addIcon(iconColor3);
-			colorCategory.addIcon(iconColor4);
-			colorCategory.addIcon(iconColor5);
-			colorCategory.addIcon(iconColor6);
-			colorCategory.addIcon(iconColor7);
 			colorCategory.addIcon(iconColor8);
+			colorCategory.addIcon(iconColor7);
+			colorCategory.addIcon(iconColor6);
+			colorCategory.addIcon(iconColor5);
+			colorCategory.addIcon(iconColor4);
+			colorCategory.addIcon(iconColor3);
+			colorCategory.addIcon(iconColor2);			
+			colorCategory.addIcon(iconColor1);
 
 			invisibleRoot = new IconCategory("", "");
 			invisibleRoot.addIcon(baseCategory);
@@ -524,6 +526,9 @@ public class EclipseIconsView extends ViewPart {
 			ActionContributionItem item2 = new ActionContributionItem(
 					new CrawlISharedImagesAction());
 			item2.fill(menu, -1);
+			ActionContributionItem item3 = new ActionContributionItem(
+					new CrawWebAction());
+			item3.fill(menu, -1);
 			return menu;
 		}
 
