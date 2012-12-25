@@ -29,6 +29,9 @@
                   name="org.eclipse.core.resources.IFile">
             </objectClass>
          </enablement>
+         <description>
+            Show icons folder image resources.
+         </description>
       </decorator>
       <decorator
             class="org.eclipse_icons.editor.label.decorator.IconsLabelDecorator"
@@ -40,6 +43,9 @@
                   name="org.eclipse.core.resources.IFile">
             </objectClass>
          </enablement>
+         <description>
+            Show all image resources as icons.
+         </description>
       </decorator>
    </extension>
    <extension
@@ -47,7 +53,7 @@
       <editor
             class="org.eclipse_icons.editor.IconsEditorPart"
             default="false"
-            extensions="png,PNG,gif,GIF"
+            extensions="png,PNG,gif,GIF,bmp,BMP"
             icon="icons/view.gif"
             id="org.eclipse_icons.editor.iconEditor"
             name="Icon Editor">
