@@ -58,19 +58,20 @@ public class Utils {
 		}
 		return null;
 	}
-	
+
 	public static int getImageFormatFromExtension(String extension) {
-		if (extension.equalsIgnoreCase("png")){
+		if (extension.equalsIgnoreCase("png")) {
 			return SWT.IMAGE_PNG;
-		} else if (extension.equalsIgnoreCase("bmp")){
+		} else if (extension.equalsIgnoreCase("bmp")) {
 			return SWT.IMAGE_BMP;
-		} else if (extension.equalsIgnoreCase("gif")){
+		} else if (extension.equalsIgnoreCase("gif")) {
 			return SWT.IMAGE_GIF;
-		} else if (extension.equalsIgnoreCase("jpg") || extension.equalsIgnoreCase("jpeg")){
+		} else if (extension.equalsIgnoreCase("jpg")
+				|| extension.equalsIgnoreCase("jpeg")) {
 			return SWT.IMAGE_JPEG;
-		} else if (extension.equalsIgnoreCase("tiff")){
+		} else if (extension.equalsIgnoreCase("tiff")) {
 			return SWT.IMAGE_TIFF;
-		} else if (extension.equalsIgnoreCase("ico")){
+		} else if (extension.equalsIgnoreCase("ico")) {
 			return SWT.IMAGE_ICO;
 		}
 		return SWT.IMAGE_PNG;
@@ -85,106 +86,115 @@ public class Utils {
 		return croppedImage;
 	}
 
-
 	/**
 	 * 
 	 * @param image
-	 * @param direction Rotate: SWT.LEFT, SWT.RIGHT, SWT.DOWN for 180º, Flip: SWT.HORIZONTAL, SWT.VERTICAL
+	 * @param direction
+	 *            Rotate: SWT.LEFT, SWT.RIGHT, SWT.DOWN for 180º, Flip:
+	 *            SWT.HORIZONTAL, SWT.VERTICAL
 	 * @return
 	 */
 	public static Image rotateOrFlip(Image image, int direction) {
-		try{
-		// Get the current display
-		Display display = Display.getCurrent();
-		if (display == null)
-			SWT.error(SWT.ERROR_THREAD_INVALID_ACCESS);
+		try {
+			// Get the current display
+			Display display = Display.getCurrent();
+			if (display == null)
+				SWT.error(SWT.ERROR_THREAD_INVALID_ACCESS);
 
-		// Use the image's data to create a rotated image's data
-		ImageData sd = image.getImageData();
+			// Use the image's data to create a rotated image's data
+			ImageData sd = image.getImageData();
 
-		// Manage alpha layer
-		boolean containsAlpha = sd.alphaData != null;
-		byte[] newAlphaData = null;
-		if (containsAlpha) {
-			newAlphaData = new byte[sd.alphaData.length];
-		}
+			// Manage alpha layer
+			boolean containsAlpha = sd.alphaData != null;
+			byte[] newAlphaData = null;
+			if (containsAlpha) {
+				newAlphaData = new byte[sd.alphaData.length];
+			}
 
-		ImageData dd = new ImageData(sd.height, sd.width, sd.depth, sd.palette);
+			// Create new ImageData taking into account new size
+			ImageData dd;
+			if (direction == SWT.LEFT || direction == SWT.RIGHT) {
+				dd = new ImageData(sd.height, sd.width, sd.depth, sd.palette);
+			} else { // direction == SWT.HORIZONTAL || direction == SWT.VERTICAL
+						// || direction == SWT.DOWN
+				dd = new ImageData(sd.width, sd.height, sd.depth, sd.palette);
+			}
 
-		if (containsAlpha) {
-			dd.alphaData = newAlphaData;
-		}
-		dd.alpha = sd.alpha;
-		dd.transparentPixel = sd.transparentPixel;
+			if (containsAlpha) {
+				dd.alphaData = newAlphaData;
+			}
+			dd.alpha = sd.alpha;
+			dd.transparentPixel = sd.transparentPixel;
 
-		// Run through the horizontal pixels
-		for (int sx = 0; sx < sd.width; sx++) {
-			// Run through the vertical pixels
-			for (int sy = 0; sy < sd.height; sy++) {
-				int dx = 0, dy = 0;
-				switch (direction) {
-				case SWT.LEFT: // left 90 degrees
-					dx = sy;
-					dy = sd.width - sx - 1;
-					break;
-				case SWT.RIGHT: // right 90 degrees
-					dx = sd.height - sy - 1;
-					dy = sx;
-					break;
-				case SWT.DOWN: // 180 degrees
-					dx = sd.width - sx - 1;
-					dy = sd.height - sy - 1;
-					break;
-				case SWT.HORIZONTAL: // flip horizontal
-					dx = sd.width - sx - 1;
-					dy = sy;
-					break;
-				case SWT.VERTICAL: // flip vertical
-					dx = sx;
-					dy = sd.height - sy - 1;
-					break;
-				}
+			// Run through the horizontal pixels
+			for (int sx = 0; sx < sd.width; sx++) {
+				// Run through the vertical pixels
+				for (int sy = 0; sy < sd.height; sy++) {
+					int dx = 0, dy = 0;
+					switch (direction) {
+					case SWT.LEFT: // left 90 degrees
+						dx = sy;
+						dy = sd.width - sx - 1;
+						break;
+					case SWT.RIGHT: // right 90 degrees
+						dx = sd.height - sy - 1;
+						dy = sx;
+						break;
+					case SWT.DOWN: // 180 degrees
+						dx = sd.width - sx - 1;
+						dy = sd.height - sy - 1;
+						break;
+					case SWT.HORIZONTAL: // flip horizontal
+						dx = sd.width - sx - 1;
+						dy = sy;
+						break;
+					case SWT.VERTICAL: // flip vertical
+						dx = sx;
+						dy = sd.height - sy - 1;
+						break;
+					}
 
-				// Swap the x, y source data to y, x in the destination
-				dd.setPixel(dx, dy, sd.getPixel(sx, sy));
-				// Swap also the alpha layer
-				if (containsAlpha) {
-					dd.setAlpha(dx, dy, sd.getAlpha(sx, sy));
+					// Swap the x, y source data to y, x in the destination
+					dd.setPixel(dx, dy, sd.getPixel(sx, sy));
+					// Swap also the alpha layer
+					if (containsAlpha) {
+						dd.setAlpha(dx, dy, sd.getAlpha(sx, sy));
+					}
 				}
 			}
-		}
 
-		// Create the vertical image
-		return new Image(display, dd);
-		} catch (Exception e){
+			// Create the vertical image
+			return new Image(display, dd);
+		} catch (Exception e) {
 			// Exception. Return original image
 			e.printStackTrace();
 			return image;
 		}
 	}
-	
+
 	public static Dimension getImageDim(final String path) {
-	    Dimension result = null;
-	    String suffix = UIUtils.getFileSuffix(path);
-	    Iterator<ImageReader> iter = ImageIO.getImageReadersBySuffix(suffix);
-	    if (iter.hasNext()) {
-	        ImageReader reader = iter.next();
-	        try {
-	            ImageInputStream stream = new FileImageInputStream(new File(path));
-	            reader.setInput(stream);
-	            int width = reader.getWidth(reader.getMinIndex());
-	            int height = reader.getHeight(reader.getMinIndex());
-	            result = new Dimension(width, height);
-	        } catch (IOException e) {
-	            e.printStackTrace();
-	        } finally {
-	            reader.dispose();
-	        }
-	    } else {
-	    	// No reader found for given format
-	    	return null;
-	    }
-	    return result;
+		Dimension result = null;
+		String suffix = UIUtils.getFileSuffix(path);
+		Iterator<ImageReader> iter = ImageIO.getImageReadersBySuffix(suffix);
+		if (iter.hasNext()) {
+			ImageReader reader = iter.next();
+			try {
+				ImageInputStream stream = new FileImageInputStream(new File(
+						path));
+				reader.setInput(stream);
+				int width = reader.getWidth(reader.getMinIndex());
+				int height = reader.getHeight(reader.getMinIndex());
+				result = new Dimension(width, height);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				reader.dispose();
+			}
+		} else {
+			// No reader found for given format
+			return null;
+		}
+		return result;
 	}
 
 }
