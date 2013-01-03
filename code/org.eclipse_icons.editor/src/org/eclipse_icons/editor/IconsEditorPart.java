@@ -21,6 +21,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
@@ -75,6 +76,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	boolean drawing = false;
 
 	// States
+	private ToolItem currentColorToolItem;
 	private ToolItem colorPickerToolItem;
 	private ToolItem paintToolItem;
 	private ToolItem fillToolItem;
@@ -133,6 +135,36 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		parent_original.setLayout(gridLayout);
 
 		ToolBar toolBar = new ToolBar(parent_original, SWT.FLAT);
+
+		currentColorToolItem = new ToolItem(toolBar, SWT.CHECK);
+		currentColorToolItem.setToolTipText("Current color");
+		currentColorToolItem.setSelection(false);
+		currentColorToolItem.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				MessageDialog.openInformation(Display.getDefault()
+						.getActiveShell(), "Info",
+						"Pick a color from the image");
+				selectToolItem(colorPickerToolItem);
+				currentColorToolItem.setSelection(false);
+			}
+		});
+
+		// initialize color selection
+		// get first non transparent one
+		for (PixelItem item : pixels) {
+			if (item.alpha == 255) {
+				colorPickerSelection = (PixelItem) item.clone();
+				break;
+			}
+		}
+		// if not found, get the first color
+		if (colorPickerSelection == null) {
+			colorPickerSelection = (PixelItem) pixels.get(0).clone();
+		}
+		currentColorToolItem
+				.setImage(createImageForColorSelection(colorPickerSelection));
+
+		new ToolItem(toolBar, SWT.SEPARATOR);
 
 		paintToolItem = new ToolItem(toolBar, SWT.CHECK);
 		paintToolItem.setToolTipText("Paint");
@@ -199,9 +231,10 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		});
 
 		// Not enabled if bmp
-		if (input.getFile().getFileExtension().equalsIgnoreCase("bmp")) {
-			eraseToolItem.setToolTipText("Erase disabled in bmp files");
-			selectToolItem(colorPickerToolItem);
+		if (imageData.getTransparencyType() == SWT.TRANSPARENCY_NONE) {
+			eraseToolItem.setToolTipText("Erase disabled in bmp files and transparency disabled images");
+			eraseToolItem.setEnabled(false);
+			selectToolItem(paintToolItem);
 		}
 
 		new ToolItem(toolBar, SWT.SEPARATOR);
@@ -298,8 +331,8 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 			if (!newImageData.palette.isDirect) {
 				// Dont change the pixel data if it was already set as
 				// transparency
-				if (imageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL
-						&& pixelItem.alpha != 0) {
+				if ((imageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL && pixelItem.alpha != 0)
+						|| imageData.getTransparencyType() != SWT.TRANSPARENCY_PIXEL) {
 					// Get the index of the color in the palette
 					for (int index = 0; index < newImageData.getRGBs().length; index++) {
 						if (newImageData.getRGBs()[index].equals(color)) {
@@ -427,6 +460,8 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 						colorPickerSelection = (PixelItem) selectedPixel
 								.clone();
 						selectToolItem(paintToolItem);
+						currentColorToolItem
+								.setImage(createImageForColorSelection(colorPickerSelection));
 					}
 				}
 			}
@@ -459,6 +494,29 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				drawing = false;
 			}
 		});
+	}
+
+	private Image createImageForColorSelection(PixelItem colorPickerSelection) {
+		PaletteData paletteData = new PaletteData(new RGB[] {
+				new RGB(255, 255, 255), colorPickerSelection.color.getRGB(),
+				new RGB(10, 10, 10) });
+		ImageData imageData = new ImageData(16, 16, 2, paletteData);
+
+		for (int x = 0; x < 16; x++) {
+			for (int y = 0; y < 16; y++) {
+				if (x == 15 || y == 15) {
+					imageData.setPixel(x, y, 2);
+					imageData.setAlpha(x, y, 255);
+				} else if (x == 0 || y == 0 || x == 14 || y == 14) {
+					imageData.setPixel(x, y, 0);
+					imageData.setAlpha(x, y, 255);
+				} else {
+					imageData.setPixel(x, y, 1);
+					imageData.setAlpha(x, y, colorPickerSelection.alpha);
+				}
+			}
+		}
+		return new Image(Display.getCurrent(), imageData);
 	}
 
 	private void addZoomToolItems(ToolBar toolBar) {
