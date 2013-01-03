@@ -77,6 +77,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	// States
 	private ToolItem colorPickerToolItem;
 	private ToolItem paintToolItem;
+	private ToolItem fillToolItem;
 	private ToolItem eraseToolItem;
 
 	// Zoom
@@ -112,6 +113,18 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		intializePixels(imageData);
 	}
 
+	/**
+	 * Activate only the selected toolItem
+	 * 
+	 * @param toolItem
+	 */
+	private void selectToolItem(ToolItem toolItem) {
+		paintToolItem.setSelection(paintToolItem == toolItem);
+		colorPickerToolItem.setSelection(colorPickerToolItem == toolItem);
+		eraseToolItem.setSelection(eraseToolItem == toolItem);
+		fillToolItem.setSelection(fillToolItem == toolItem);
+	}
+
 	@Override
 	public void createPartControl(Composite parent_original) {
 
@@ -134,13 +147,29 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					MessageDialog.openInformation(Display.getDefault()
 							.getActiveShell(), "Info",
 							"Pick a color from the image before painting");
-					paintToolItem.setSelection(false);
-					colorPickerToolItem.setSelection(true);
-					eraseToolItem.setSelection(false);
+					selectToolItem(colorPickerToolItem);
 				} else {
-					paintToolItem.setSelection(true);
-					colorPickerToolItem.setSelection(false);
-					eraseToolItem.setSelection(false);
+					selectToolItem(paintToolItem);
+				}
+			}
+		});
+
+		fillToolItem = new ToolItem(toolBar, SWT.CHECK);
+		fillToolItem.setToolTipText("Paint");
+		fillToolItem.setSelection(false);
+		fillToolItem.setImage(Activator.getImageDescriptor(
+				"icons/editor/fill.png").createImage());
+		fillToolItem.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				// for the moment, only selected colors with the color picker is
+				// allowed
+				if (colorPickerSelection == null) {
+					MessageDialog.openInformation(Display.getDefault()
+							.getActiveShell(), "Info",
+							"Pick a color from the image before painting");
+					selectToolItem(colorPickerToolItem);
+				} else {
+					selectToolItem(fillToolItem);
 				}
 			}
 		});
@@ -152,9 +181,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				"icons/editor/colorPicker.png").createImage());
 		colorPickerToolItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				paintToolItem.setSelection(false);
-				colorPickerToolItem.setSelection(true);
-				eraseToolItem.setSelection(false);
+				selectToolItem(colorPickerToolItem);
 			}
 		});
 
@@ -167,20 +194,14 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				"icons/editor/erase.png").createImage());
 		eraseToolItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				paintToolItem.setSelection(false);
-				colorPickerToolItem.setSelection(false);
-				eraseToolItem.setSelection(true);
+				selectToolItem(eraseToolItem);
 			}
 		});
-		
+
 		// Not enabled if bmp
-		if (input.getFile().getFileExtension().equalsIgnoreCase("bmp")){
-			eraseToolItem.setEnabled(false);
+		if (input.getFile().getFileExtension().equalsIgnoreCase("bmp")) {
 			eraseToolItem.setToolTipText("Erase disabled in bmp files");
-			
-			paintToolItem.setSelection(false);
-			colorPickerToolItem.setSelection(true);
-			eraseToolItem.setSelection(false);
+			selectToolItem(colorPickerToolItem);
 		}
 
 		new ToolItem(toolBar, SWT.SEPARATOR);
@@ -275,7 +296,8 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 			// The image has a non-direct color model
 			if (!newImageData.palette.isDirect) {
-				// Dont change the pixel data if it was already set as transparency
+				// Dont change the pixel data if it was already set as
+				// transparency
 				if (imageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL
 						&& pixelItem.alpha != 0) {
 					// Get the index of the color in the palette
@@ -391,16 +413,20 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					// Paint
 					else if (paintToolItem.getSelection()) {
 						drawing = true;
-						paintPixel(selectedPixel);
+						paintPixel(colorPickerSelection, selectedPixel);
+					}
+					// Fill
+					else if (fillToolItem.getSelection()) {
+						drawing = false;
+						fillPixels((PixelItem) selectedPixel.clone(),
+								selectedPixel);
 					}
 					// Pick Color
 					else if (colorPickerToolItem.getSelection()) {
 						drawing = false;
-						paintToolItem.setSelection(true);
-						colorPickerToolItem.setSelection(false);
-						eraseToolItem.setSelection(false);
 						colorPickerSelection = (PixelItem) selectedPixel
 								.clone();
+						selectToolItem(paintToolItem);
 					}
 				}
 			}
@@ -420,7 +446,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 						}
 						// Paint
 						else if (paintToolItem.getSelection()) {
-							paintPixel(selectedPixel);
+							paintPixel(colorPickerSelection, selectedPixel);
 						}
 					}
 				}
@@ -480,13 +506,101 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		}
 	}
 
-	private void paintPixel(PixelItem pixel) {
+	private boolean paintPixel(PixelItem referencePixel, PixelItem targetPixel) {
 		// check if change is needed
-		if (pixel.alpha != colorPickerSelection.alpha
-				|| !pixel.color.equals(colorPickerSelection.color)) {
-			pixel.alpha = colorPickerSelection.alpha;
-			pixel.color = colorPickerSelection.color;
-			notifyPixelModification(pixel);
+		if (isDifferentColor(referencePixel, targetPixel)) {
+			targetPixel.alpha = referencePixel.alpha;
+			targetPixel.color = referencePixel.color;
+			notifyPixelModification(targetPixel);
+			return true;
+		}
+		return false;
+	}
+
+	private boolean isDifferentColor(PixelItem pixelItem1, PixelItem pixelItem2) {
+		return (pixelItem1.alpha != pixelItem2.alpha || !pixelItem1.color
+				.equals(pixelItem2.color));
+	}
+
+	/**
+	 * We paint the selected pixel and then we recursively visit the left,
+	 * right, up and down pixels.
+	 * 
+	 * @param referencePixel
+	 * @param pixel
+	 */
+	private void fillPixels(PixelItem referencePixel, PixelItem pixel) {
+
+		// check if change is needed
+		if (paintPixel(colorPickerSelection, pixel)) {
+
+			PixelItem rightPixel = getRightPixel(pixel);
+			if (rightPixel != null) {
+				if (!isDifferentColor(referencePixel, rightPixel)) {
+					fillPixels(referencePixel, rightPixel);
+				}
+			}
+
+			PixelItem leftPixel = getLeftPixel(pixel);
+			if (leftPixel != null) {
+				if (!isDifferentColor(referencePixel, leftPixel)) {
+					fillPixels(referencePixel, leftPixel);
+				}
+			}
+
+			PixelItem upPixel = getUpPixel(pixel);
+			if (upPixel != null) {
+				if (!isDifferentColor(referencePixel, upPixel)) {
+					fillPixels(referencePixel, upPixel);
+				}
+			}
+
+			PixelItem downPixel = getDownPixel(pixel);
+			if (downPixel != null) {
+				if (!isDifferentColor(referencePixel, downPixel)) {
+					fillPixels(referencePixel, downPixel);
+				}
+			}
+		}
+	}
+
+	private PixelItem getRightPixel(PixelItem pixel) {
+		if (pixel.realPosition.x == iconWidth - 1) {
+			return null;
+		} else {
+			int position = getPixelPositionInTheArray(pixel.realPosition.x,
+					pixel.realPosition.y);
+			return pixels.get(position + 1);
+		}
+	}
+
+	private PixelItem getLeftPixel(PixelItem pixel) {
+		if (pixel.realPosition.x == 0) {
+			return null;
+		} else {
+			int position = getPixelPositionInTheArray(pixel.realPosition.x,
+					pixel.realPosition.y);
+			return pixels.get(position - 1);
+		}
+	}
+
+	private PixelItem getUpPixel(PixelItem pixel) {
+		if (pixel.realPosition.y == 0) {
+			return null;
+		} else {
+			int position = getPixelPositionInTheArray(pixel.realPosition.x,
+					pixel.realPosition.y);
+			return pixels.get(position - iconWidth);
+		}
+	}
+
+	private PixelItem getDownPixel(PixelItem pixel) {
+		if (pixel.realPosition.y == iconHeight - 1) {
+			return null;
+		} else {
+			int position = getPixelPositionInTheArray(pixel.realPosition.x,
+					pixel.realPosition.y);
+			return pixels.get(position + iconWidth);
 		}
 	}
 
@@ -528,10 +642,14 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 			return null;
 		}
 
+		int position = getPixelPositionInTheArray(pixelX, pixelY);
+		return pixels.get(position);
+	}
+
+	private int getPixelPositionInTheArray(int pixelX, int pixelY) {
 		// Get the actual position in the array
 		int positionInArray = pixelY * iconWidth + pixelX;
-
-		return pixels.get(positionInArray);
+		return positionInArray;
 	}
 
 	protected Canvas createCanvas(Composite parent, PaintListener pl) {
