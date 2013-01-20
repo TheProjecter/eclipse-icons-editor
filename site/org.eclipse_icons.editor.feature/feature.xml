@@ -2,7 +2,7 @@
 <feature
       id="org.eclipse_icons.editor.feature"
       label="Eclipse Icons Editor Feature"
-      version="2.0.3.qualifier"
+      version="2.0.4.qualifier"
       provider-name="Jabier Martinez"
       plugin="org.eclipse_icons.editor">
 
