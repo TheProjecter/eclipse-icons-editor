@@ -107,9 +107,14 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 		// Sets the name of the editor with file name
 		setPartName(((FileEditorInput) input).getName());
-
-		imageData = UIUtils.getImageFromResource(this.input.getFile())
-				.getImageData();
+		Image image = UIUtils.getImageFromResource(this.input.getFile());
+		
+		// Error loading the resource
+		if (image == null){
+			throw new PartInitException("It was not possible to load the resource as a valid image.");
+		}
+		
+		imageData = image.getImageData();
 		iconWidth = imageData.width;
 		iconHeight = imageData.height;
 		intializePixels(imageData);

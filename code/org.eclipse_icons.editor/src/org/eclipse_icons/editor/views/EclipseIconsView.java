@@ -223,13 +223,29 @@ public class EclipseIconsView extends ViewPart {
 			colorCategory.addIcon(iconColor2);			
 			colorCategory.addIcon(iconColor1);
 
+			IconCategory scaleCategory = new IconCategory(IconCategory.SCALE,
+					IconCategory.SCALE);
+			Icon iconScale200 = new Icon(Icon.SCALE_200, "base_double_size");
+			Icon iconScale75 = new Icon(Icon.SCALE_75, "base_0.75_size");
+			Icon iconScale60 = new Icon(Icon.SCALE_60, "base_0.6_size");
+			Icon iconScale50 = new Icon(Icon.SCALE_50, "base_half_size");
+			Icon iconScale40 = new Icon(Icon.SCALE_40, "base_0.4_size");
+
+			scaleCategory.addIcon(iconScale200);
+			scaleCategory.addIcon(iconScale75);
+			scaleCategory.addIcon(iconScale60);
+			scaleCategory.addIcon(iconScale50);
+			scaleCategory.addIcon(iconScale40);
+
+			// Categories order
 			invisibleRoot = new IconCategory("", "");
 			invisibleRoot.addIcon(baseCategory);
 			invisibleRoot.addIcon(centeredOverlayCategory);
 			invisibleRoot.addIcon(cornersOverlayCategory);
 			invisibleRoot.addIcon(sidesOverlayCategory);
-			invisibleRoot.addIcon(flipRotateCategory);
 			invisibleRoot.addIcon(colorCategory);
+			invisibleRoot.addIcon(flipRotateCategory);
+			invisibleRoot.addIcon(scaleCategory);
 		}
 
 		public void dispose() {

@@ -13,6 +13,7 @@ public class IconCategory extends Icon {
 	static final String CENTERED_OVERLAY = "Centered overlay";
 	static final String FLIP_ROTATE = "Flip rotate";
 	static final String COLOR = "Color";
+	static final String SCALE = "Scale";
 	
 	private ArrayList<Icon> children;
 	public IconCategory(String id, String name) {

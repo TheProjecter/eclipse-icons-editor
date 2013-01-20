@@ -23,9 +23,17 @@ public class Icon {
 	public static final String ROTATE_RIGHT_BASE_ICON = "Rotate right base icon";
 	public static final String ROTATE_LEFT_BASE_ICON = "Rotate left base icon";
 	public static final String ROTATE_180_BASE_ICON = "Rotate 180 base icon";
+	
 	public static final String COLOR_DISABLED = "Color disabled";
 	public static final String COLOR_GRAY = "Color gray";
 	public static final String COLOR_RGB = "Color RGB";
+	
+	public static final String SCALE_200 = "Scale 200 base icon";
+	public static final String SCALE_75 = "Scale 75 base icon";
+	public static final String SCALE_60 = "Scale 60 base icon";
+	public static final String SCALE_50 = "Scale 50 base icon";
+	public static final String SCALE_40 = "Scale 40 base icon";
+
 	
 	private String name;
 	private String id;

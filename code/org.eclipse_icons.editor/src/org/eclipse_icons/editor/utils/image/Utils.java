@@ -171,6 +171,30 @@ public class Utils {
 			return image;
 		}
 	}
+	
+	/**
+	 * Scale image
+	 * @param image
+	 * @param scaleRatio 0,5 half of the size
+	 * @return scaled image
+	 */
+	public static Image scaleImage(Image image, double scaleRatio){
+	    final int width = image.getBounds().width;
+	    final int height = image.getBounds().height;
+	    return scaleImage(image,(int)(width*scaleRatio),(int)(height*scaleRatio));
+	}
+	
+	/**
+	 * Scale image to a specific width and height
+	 * @param image
+	 * @param width
+	 * @param height
+	 * @return scaled image
+	 */
+	public static Image scaleImage(Image image, int width, int height){
+		ImageData scaledData = image.getImageData().scaledTo(width,height);
+		return new Image(image.getDevice(),scaledData);
+	}
 
 	public static Dimension getImageDim(final String path) {
 		Dimension result = null;
