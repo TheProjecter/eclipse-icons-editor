@@ -1,5 +1,7 @@
 package org.eclipse_icons.editor.crawlers;
 
+import java.io.File;
+
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse_icons.editor.utils.ui.UIUtils;
 
@@ -28,7 +30,7 @@ public class CrawlEclipseIconsWizard extends Wizard {
 		String[] filters = new String[]{ filterOption };
 		String destDir = crawlEclipseIconsWizardPage.getDestDir();
 		String workspacePath = UIUtils.getWorkspacePath().toOSString();
-		destDir = workspacePath + destDir;
+		destDir = workspacePath + destDir + File.separatorChar + "icons";
 		
 		CrawlEclipseIconsJob job = new CrawlEclipseIconsJob(srcDir,destDir,filters);
 		job.setUser(true);

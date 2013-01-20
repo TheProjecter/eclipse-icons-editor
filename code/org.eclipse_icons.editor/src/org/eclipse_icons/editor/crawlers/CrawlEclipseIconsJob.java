@@ -65,6 +65,7 @@ public class CrawlEclipseIconsJob extends Job {
 		
 		srcDir = new File(srcDirPath);
 		destDir = new File(destDirPath);
+		destDir.mkdirs();
 		
 		// build wildcards and asterisk pattern
 		for (int i=0; i<filters.length; i++){
@@ -99,7 +100,7 @@ public class CrawlEclipseIconsJob extends Job {
 
 	private static File createIndexFile(File dir, List<IconInfo> icons)
 			throws IOException {
-		File indexFile = new File(dir, "index.html");
+		File indexFile = new File(dir.getParentFile(), "index.html");
 
 		PrintWriter writer = new PrintWriter(indexFile);
 
@@ -187,7 +188,7 @@ public class CrawlEclipseIconsJob extends Job {
 			}
 
 			writer.print("  <td><a href=\"" + icon.getPath() + "\">");
-			writer.print("<img src=\"" + icon.getPath() + "\" width=\""
+			writer.print("<img src=\"icons/" + icon.getPath() + "\" width=\""
 					+ icon.getWidth() + "\" height=\"" + icon.getHeight()
 					+ "\">");
 			writer.println("</a></td><td>" + icon.getName() + "</td>");
@@ -311,7 +312,7 @@ public class CrawlEclipseIconsJob extends Job {
 	}
 
 	private static boolean isImageName(String name) {
-		String[] suffixes = new String[] { ".gif", ".png", ".jpg" };
+		String[] suffixes = new String[] { ".gif", ".png", ".jpg", ".bmp" };
 
 		for (String suffix : suffixes) {
 			if (name.endsWith(suffix)) {
@@ -411,12 +412,12 @@ public class CrawlEclipseIconsJob extends Job {
 			monitor.worked(1);
 
 			monitor.subTask("Refreshing workspace");
-			UIUtils.refreshWorkspace(destDir.getAbsolutePath());
+			UIUtils.refreshWorkspace(destDir.getParentFile().getAbsolutePath());
 			monitor.worked(1);
 			
 			monitor.subTask("Opening external browser");
 			try {
-				URL url = new URL(destDir.toURI().toURL(),"index.html");
+				URL url = new URL(destDir.getParentFile().toURI().toURL(),"index.html");
 				PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(url);
 			} catch (PartInitException e1) {
 				MessageDialog.openError(Display.getCurrent().getActiveShell(), "Error", "Error opening the external Browser\nindex.html at "+ destDir);
