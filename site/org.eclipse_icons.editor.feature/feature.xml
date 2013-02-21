@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="org.eclipse_icons.editor.feature"
-      label="Eclipse Icons Editor Feature"
-      version="2.0.4.qualifier"
+      label="Icons Editor Feature"
+      version="2.1.0.qualifier"
       provider-name="Jabier Martinez"
       plugin="org.eclipse_icons.editor">
 
