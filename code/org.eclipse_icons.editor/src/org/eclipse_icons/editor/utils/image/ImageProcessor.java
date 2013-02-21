@@ -83,7 +83,8 @@ public class ImageProcessor {
 		}
 
 		if (id.equals(Icon.ROTATE_LEFT_BASE_ICON)) {
-			return new Image(baseImage.getDevice(), Utils.scaleImage(baseImage, 2).getImageData());
+			return new Image(baseImage.getDevice(), Utils.rotateOrFlip(
+					baseImage, SWT.LEFT).getImageData());
 		}
 		if (id.equals(Icon.ROTATE_RIGHT_BASE_ICON)) {
 			return new Image(baseImage.getDevice(), Utils.rotateOrFlip(
@@ -117,21 +118,23 @@ public class ImageProcessor {
 							baseImage.getDevice(), Integer.parseInt(rgb[0]),
 							Integer.parseInt(rgb[1]), Integer.parseInt(rgb[2]))));
 		}
-		
+		if (id.equals(Icon.SCALE_16X16)) {
+			return new Image(baseImage.getDevice(), Utils.scaleImage(baseImage.getImageData(), 16, 16, true));
+		}
 		if (id.equals(Icon.SCALE_200)) {
-			return new Image(baseImage.getDevice(), Utils.scaleImage(baseImage, 2).getImageData());
+			return new Image(baseImage.getDevice(), Utils.scaleImage(baseImage.getImageData(), 2));
 		}
 		if (id.equals(Icon.SCALE_75)) {
-			return new Image(baseImage.getDevice(), Utils.scaleImage(baseImage, 0.75).getImageData());
+			return new Image(baseImage.getDevice(), Utils.scaleImage(baseImage.getImageData(), 0.75));
 		}
 		if (id.equals(Icon.SCALE_60)) {
-			return new Image(baseImage.getDevice(), Utils.scaleImage(baseImage, 0.6).getImageData());
+			return new Image(baseImage.getDevice(), Utils.scaleImage(baseImage.getImageData(), 0.6));
 		}
 		if (id.equals(Icon.SCALE_50)) {
-			return new Image(baseImage.getDevice(), Utils.scaleImage(baseImage, 0.5).getImageData());
+			return new Image(baseImage.getDevice(), Utils.scaleImage(baseImage.getImageData(), 0.5));
 		}
 		if (id.equals(Icon.SCALE_40)) {
-			return new Image(baseImage.getDevice(), Utils.scaleImage(baseImage, 0.4).getImageData());
+			return new Image(baseImage.getDevice(), Utils.scaleImage(baseImage.getImageData(), 0.4));
 		}
 
 

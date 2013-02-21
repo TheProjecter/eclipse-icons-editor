@@ -98,7 +98,7 @@ public class CrawlISharedImagesAction extends Action {
 				    IResource res = root.findMember(selectedContainer);
 				    String location = res.getLocation().append(dialog.getFileName()).toOSString();
 				    Utils.saveIconToFile(PlatformUI.getWorkbench().getSharedImages()
-							.getImage(selectedElement), location, SWT.IMAGE_PNG);
+							.getImage(selectedElement).getImageData(), location, SWT.IMAGE_PNG);
 				    UIUtils.refreshWorkspace(location);
 				}
 			}

@@ -225,12 +225,14 @@ public class EclipseIconsView extends ViewPart {
 
 			IconCategory scaleCategory = new IconCategory(IconCategory.SCALE,
 					IconCategory.SCALE);
+			Icon iconScale16x16 = new Icon(Icon.SCALE_16X16, "base_16x16");
 			Icon iconScale200 = new Icon(Icon.SCALE_200, "base_double_size");
 			Icon iconScale75 = new Icon(Icon.SCALE_75, "base_0.75_size");
 			Icon iconScale60 = new Icon(Icon.SCALE_60, "base_0.6_size");
 			Icon iconScale50 = new Icon(Icon.SCALE_50, "base_half_size");
 			Icon iconScale40 = new Icon(Icon.SCALE_40, "base_0.4_size");
 
+			scaleCategory.addIcon(iconScale16x16);
 			scaleCategory.addIcon(iconScale200);
 			scaleCategory.addIcon(iconScale75);
 			scaleCategory.addIcon(iconScale60);
@@ -782,7 +784,7 @@ public class EclipseIconsView extends ViewPart {
 						newIconAbsPath = newIconAbsPath + "."
 								+ Utils.getExtension(outputFormat);
 						// Save it
-						Utils.saveIconToFile(image, newIconAbsPath,
+						Utils.saveIconToFile(image.getImageData(), newIconAbsPath,
 								outputFormat);
 					}
 				}

@@ -35,6 +35,9 @@ import org.eclipse.ui.ide.IDE;
 import org.eclipse_icons.editor.Activator;
 import org.osgi.framework.Bundle;
 
+/**
+ * @author Jabier Martinez
+ */
 public class UIUtils {
 
 	public static final String[] IMAGE_EXTENSIONS = {"*.gif", "*.png", "*.bmp", "*.jpg"};
@@ -149,9 +152,7 @@ public class UIUtils {
 		}
 	}
 
-	public static boolean isImageFile(String filePath) {
-		File file = new File(filePath);
-		String fileName = file.getName();
+	public static boolean isImageFile(String fileName) {
 		int dot = fileName.lastIndexOf(".");
 		if (dot==-1) {
 			return false;
@@ -169,7 +170,11 @@ public class UIUtils {
 	}
 	
 	public static boolean isImageFile(IResource resource){
-		return isImageFile(getIResourceAbsPath(resource));
+		return isImageFile(resource.getName());
+	}
+	
+	public static boolean isImageFile(File file){
+		return isImageFile(file.getName());
 	}
 	
 	public static boolean folderContainsImages(IFolder folder){
@@ -205,6 +210,9 @@ public class UIUtils {
 	public static Image getImageFromResource(IResource resource) {
 		try {
 			String absPath = getIResourceAbsPath(resource);
+			if (absPath == null){
+				return null;
+			}
 			return new Image(Display.getDefault(), new FileInputStream(absPath));
 		} catch (Exception e) {
 			// If any exception happens return null
@@ -228,6 +236,9 @@ public class UIUtils {
 	}
 
 	public static String getIResourceAbsPath(IResource resource){
+		if (resource.getLocation() == null){
+			return null;
+		}
 		return resource.getLocation().toOSString();
 	}
 

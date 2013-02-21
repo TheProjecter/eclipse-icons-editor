@@ -16,6 +16,7 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
+import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse_icons.editor.utils.ui.UIUtils;
@@ -45,10 +46,10 @@ public class Utils {
 				ImageDescriptor.createFromImage(overlayImage), overlayPoint);
 		return oid.createImage();
 	}
-
-	public static void saveIconToFile(Image image, String imagePath, int format) {
+	
+	public static void saveIconToFile(ImageData imageData, String imagePath, int format){
 		ImageLoader loader = new ImageLoader();
-		loader.data = new ImageData[] { image.getImageData() };
+		loader.data = new ImageData[] { imageData };
 		loader.save(imagePath, format);
 	}
 
@@ -178,22 +179,32 @@ public class Utils {
 	 * @param scaleRatio 0,5 half of the size
 	 * @return scaled image
 	 */
-	public static Image scaleImage(Image image, double scaleRatio){
-	    final int width = image.getBounds().width;
-	    final int height = image.getBounds().height;
-	    return scaleImage(image,(int)(width*scaleRatio),(int)(height*scaleRatio));
+	public static ImageData scaleImage(ImageData imageData, double scaleRatio){
+	    return scaleImage(imageData,(int)(imageData.width*scaleRatio),(int)(imageData.height*scaleRatio),false);
 	}
 	
 	/**
-	 * Scale image to a specific width and height
-	 * @param image
+	 * Scale Image
+	 * @param imageData
 	 * @param width
 	 * @param height
-	 * @return scaled image
+	 * @param aspectRatio
+	 * @return scaledImageData
 	 */
-	public static Image scaleImage(Image image, int width, int height){
-		ImageData scaledData = image.getImageData().scaledTo(width,height);
-		return new Image(image.getDevice(),scaledData);
+	public static ImageData scaleImage(ImageData imageData, int width, int height, boolean aspectRatio){
+		if (width == 0 || height == 0){
+			// error, we return the original
+			return imageData;
+		}
+		if (!aspectRatio){
+			return imageData.scaledTo(width, height);
+		}
+		int originalWidth = imageData.width;
+		int originalHeight = imageData.height;
+		if (originalWidth >= originalHeight){
+			return imageData.scaledTo(width, (originalHeight * height)/originalWidth);
+		}
+		return imageData.scaledTo((originalWidth * width)/originalHeight, height);
 	}
 
 	public static Dimension getImageDim(final String path) {
@@ -219,6 +230,20 @@ public class Utils {
 			return null;
 		}
 		return result;
+	}
+
+	public static ImageData createEmptyDirectPaletteImageData(int width, int height, int depth) {
+		// direct palette with standard rgb masks
+		PaletteData paletteData = new PaletteData(0xff, 0xff00, 0xff0000);
+		ImageData newImageData = new ImageData(width, height, depth, paletteData);
+		// transparency, otherwise it starts in black
+		byte[] alphaData = new byte[width * height];
+		for (int i = 0; i < alphaData.length; i++){
+			// 0 means transparent
+			alphaData[i] = 0;
+		}
+		newImageData.alphaData = alphaData;
+		return newImageData;
 	}
 
 }

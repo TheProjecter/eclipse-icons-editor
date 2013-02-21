@@ -12,7 +12,7 @@
             allowMultiple="true"
             category="org.eclipse_icons.editor"
             class="org.eclipse_icons.editor.views.EclipseIconsView"
-            icon="icons/view.gif"
+            icon="icons/iconManager.png"
             id="org.eclipse_icons.editor.views.EclipseIconsEditor"
             name="Icons Manager">
       </view>
@@ -23,7 +23,7 @@
             class="org.eclipse_icons.editor.label.decorator.IconsFolderLabelDecorator"
             id="org.eclipse_icons.editor.decorator.icons.folder"
             label="Icons Folder"
-            state="true">
+            state="false">
          <enablement>
             <objectClass
                   name="org.eclipse.core.resources.IFile">
@@ -58,6 +58,20 @@
             id="org.eclipse_icons.editor.iconEditor"
             name="Icon Editor">
       </editor>
+   </extension>
+   <extension
+         point="org.eclipse.ui.newWizards">
+      <category
+            id="org.eclipse_icons.editor"
+            name="Icon Editor">
+      </category>
+      <wizard
+            category="org.eclipse_icons.editor"
+            class="org.eclipse_icons.editor.wizards.ImageNewWizard"
+            icon="icons/newIcon.png"
+            id="org.eclipse_icons.editor.wizards.ImageNewWizard"
+            name="New png icon">
+      </wizard>
    </extension>
 
 </plugin>

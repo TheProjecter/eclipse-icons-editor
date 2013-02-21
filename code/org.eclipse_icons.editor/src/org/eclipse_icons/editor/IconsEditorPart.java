@@ -28,6 +28,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.widgets.ColorDialog;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -144,12 +145,35 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		currentColorToolItem = new ToolItem(toolBar, SWT.CHECK);
 		currentColorToolItem.setToolTipText("Current color");
 		currentColorToolItem.setSelection(false);
+		
 		currentColorToolItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				MessageDialog.openInformation(Display.getDefault()
-						.getActiveShell(), "Info",
-						"Pick a color from the image");
-				selectToolItem(colorPickerToolItem);
+				
+				RGB selectedColor = null;
+				if (imageData.palette.isDirect){
+					// Direct palette
+					ColorDialog colorDialog = new ColorDialog(Display.getCurrent().getActiveShell());
+					selectedColor = colorDialog.open();
+				} else {
+					// Indirect palette
+					MessageDialog.openInformation(Display.getDefault()
+					.getActiveShell(), "Info",
+					"Images with indirect palette are not supported yet...\nPick a color from the image");
+					selectToolItem(colorPickerToolItem);
+					// TODO implement indirect palette
+					// PaletteDialog dialog = new PaletteDialog(Display.getCurrent().getActiveShell());
+					// dialog.setPalette(imageData.palette);
+					// dialog.open();
+				}
+				
+				if (selectedColor != null){
+					// Update selectedPixel
+					colorPickerSelection.color = new Color(Display.getCurrent(), selectedColor);
+					colorPickerSelection.alpha = 255; // opaque
+					currentColorToolItem.setImage(createImageForColorSelection(colorPickerSelection));
+				}
+				
+				// Never show it as selected
 				currentColorToolItem.setSelection(false);
 			}
 		});
@@ -356,13 +380,10 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 		}
 
-		// Create image
-		Image image = new Image(Display.getCurrent(), newImageData);
-		int imageFormat = Utils.getImageFormatFromExtension(input.getFile()
-				.getFileExtension());
-
 		// Save it
-		Utils.saveIconToFile(image, fileAbsPath, imageFormat);
+		int imageFormat = Utils.getImageFormatFromExtension(input.getFile()
+				.getFileExtension());		
+		Utils.saveIconToFile(newImageData, fileAbsPath, imageFormat);
 
 		monitor.worked(1);
 		monitor.done();
@@ -501,6 +522,11 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		});
 	}
 
+	/**
+	 * Create a fancy square image
+	 * @param colorPickerSelection
+	 * @return
+	 */
 	private Image createImageForColorSelection(PixelItem colorPickerSelection) {
 		PaletteData paletteData = new PaletteData(new RGB[] {
 				new RGB(255, 255, 255), colorPickerSelection.color.getRGB(),

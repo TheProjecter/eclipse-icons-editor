@@ -3,6 +3,9 @@ package org.eclipse_icons.editor.views;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse_icons.editor.utils.image.ImageProcessor;
 
+/**
+ * @author Jabier Martinez
+ */
 public class Icon {
 	
 	public static final String BASE_ICON = "Base icon";
@@ -28,6 +31,7 @@ public class Icon {
 	public static final String COLOR_GRAY = "Color gray";
 	public static final String COLOR_RGB = "Color RGB";
 	
+	public static final String SCALE_16X16 = "Scale 16x16 base icon";
 	public static final String SCALE_200 = "Scale 200 base icon";
 	public static final String SCALE_75 = "Scale 75 base icon";
 	public static final String SCALE_60 = "Scale 60 base icon";
