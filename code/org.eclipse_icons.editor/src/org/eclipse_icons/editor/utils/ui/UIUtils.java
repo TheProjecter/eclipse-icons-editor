@@ -41,7 +41,7 @@ import org.osgi.framework.Bundle;
 public class UIUtils {
 
 	public static final String[] IMAGE_EXTENSIONS = {"*.gif", "*.png", "*.bmp", "*.jpg"};
-
+	
 	public static void refreshWorkspace() {
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		IWorkspaceRoot root = workspace.getRoot();
@@ -208,12 +208,15 @@ public class UIUtils {
 	}
 
 	public static Image getImageFromResource(IResource resource) {
+		return getImage(getIResourceAbsPath(resource));
+	}
+	
+	public static Image getImage(String absolutePath) {
 		try {
-			String absPath = getIResourceAbsPath(resource);
-			if (absPath == null){
+			if (absolutePath == null){
 				return null;
 			}
-			return new Image(Display.getDefault(), new FileInputStream(absPath));
+			return new Image(Display.getDefault(), new FileInputStream(absolutePath));
 		} catch (Exception e) {
 			// If any exception happens return null
 			return null;

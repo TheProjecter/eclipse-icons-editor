@@ -10,9 +10,9 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse_icons.editor.Activator;
 
-public class CrawWebAction extends Action {
+public class CrawlWebAction extends Action {
 
-	public CrawWebAction() {
+	public CrawlWebAction() {
 		this.setImageDescriptor(Activator.getImageDescriptor(
 		           "icons/crawlEclipseIconsAction.png"));
 		this.setText("Crawl from Web (IconFinder)");

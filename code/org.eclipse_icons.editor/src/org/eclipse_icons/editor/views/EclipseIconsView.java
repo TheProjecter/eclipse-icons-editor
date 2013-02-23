@@ -51,7 +51,8 @@ import org.eclipse.ui.part.ViewPart;
 import org.eclipse_icons.editor.Activator;
 import org.eclipse_icons.editor.crawlers.CrawlEclipseIconsAction;
 import org.eclipse_icons.editor.crawlers.CrawlISharedImagesAction;
-import org.eclipse_icons.editor.crawlers.CrawWebAction;
+import org.eclipse_icons.editor.crawlers.CrawlWebAction;
+import org.eclipse_icons.editor.crawlers.CrawlWhiteBackgroundIconsAction;
 import org.eclipse_icons.editor.utils.image.Utils;
 import org.eclipse_icons.editor.utils.ui.UIUtils;
 
@@ -545,8 +546,11 @@ public class EclipseIconsView extends ViewPart {
 					new CrawlISharedImagesAction());
 			item2.fill(menu, -1);
 			ActionContributionItem item3 = new ActionContributionItem(
-					new CrawWebAction());
+					new CrawlWebAction());
 			item3.fill(menu, -1);
+			ActionContributionItem item4 = new ActionContributionItem(
+					new CrawlWhiteBackgroundIconsAction());
+			item4.fill(menu, -1);
 			return menu;
 		}
 
