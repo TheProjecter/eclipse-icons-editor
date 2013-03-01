@@ -9,7 +9,6 @@ import java.util.Collections;
 
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileStore;
-import org.eclipse.core.resources.IBuildConfiguration;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -243,19 +242,6 @@ public class UIUtils {
 			return null;
 		}
 		return resource.getLocation().toOSString();
-	}
-
-	public static boolean isResourceInBuildXML(IProject project,
-			IResource resource) {
-		try {
-			IBuildConfiguration[] buildConfigs = project.getBuildConfigs();
-			for (IBuildConfiguration buildConfig : buildConfigs){
-				System.out.println(buildConfig);
-			}
-		} catch (CoreException e) {
-			return false;
-		}
-		return false;
 	}
 	
 }

@@ -72,7 +72,10 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	protected List<PixelItem> pixels = new ArrayList<PixelItem>();
 
 	PixelItem colorPickerSelection = null;
-
+	
+	// For rectangles, selection...
+	Rectangle rectangle = null;
+	
 	// Whether the user is drawing/erasing something
 	boolean drawing = false;
 
@@ -80,6 +83,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	private ToolItem currentColorToolItem;
 	private ToolItem colorPickerToolItem;
 	private ToolItem paintToolItem;
+	private ToolItem unfilledRectangleToolItem;
 	private ToolItem fillToolItem;
 	private ToolItem eraseToolItem;
 
@@ -128,11 +132,75 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	 */
 	private void selectToolItem(ToolItem toolItem) {
 		paintToolItem.setSelection(paintToolItem == toolItem);
+		unfilledRectangleToolItem.setSelection(unfilledRectangleToolItem == toolItem);
 		colorPickerToolItem.setSelection(colorPickerToolItem == toolItem);
 		eraseToolItem.setSelection(eraseToolItem == toolItem);
 		fillToolItem.setSelection(fillToolItem == toolItem);
 	}
 
+	/**
+	 * Create Tool Items
+	 * @param toolBar
+	 */
+	private void createToolItems(ToolBar toolBar) {
+		currentColorToolItem = new ToolItem(toolBar, SWT.CHECK);
+		currentColorToolItem.setToolTipText("Current color");
+		
+		// initialize color selection
+		// get first non transparent one
+		for (PixelItem item : pixels) {
+			if (item.alpha == 255) {
+				colorPickerSelection = (PixelItem) item.clone();
+				break;
+			}
+		}
+		// if not found, get the first color
+		if (colorPickerSelection == null) {
+			colorPickerSelection = (PixelItem) pixels.get(0).clone();
+		}
+		currentColorToolItem
+				.setImage(createImageForColorSelection(colorPickerSelection));
+
+		new ToolItem(toolBar, SWT.SEPARATOR);
+
+		paintToolItem = new ToolItem(toolBar, SWT.CHECK);
+		paintToolItem.setToolTipText("Paint");
+		paintToolItem.setImage(Activator.getImageDescriptor(
+				"icons/editor/paint.png").createImage());
+		
+		unfilledRectangleToolItem = new ToolItem(toolBar, SWT.CHECK);
+		unfilledRectangleToolItem.setToolTipText("Rectangle");
+		unfilledRectangleToolItem.setImage(Activator.getImageDescriptor(
+				"icons/editor/unfilledRectangle.png").createImage());
+		
+		fillToolItem = new ToolItem(toolBar, SWT.CHECK);
+		fillToolItem.setToolTipText("Fill");
+		fillToolItem.setImage(Activator.getImageDescriptor(
+				"icons/editor/fill.png").createImage());
+		
+		colorPickerToolItem = new ToolItem(toolBar, SWT.CHECK);
+		colorPickerToolItem.setToolTipText("Pick Color");
+		colorPickerToolItem.setImage(Activator.getImageDescriptor(
+				"icons/editor/colorPicker.png").createImage());
+		
+		new ToolItem(toolBar, SWT.SEPARATOR);
+
+		eraseToolItem = new ToolItem(toolBar, SWT.CHECK);
+		eraseToolItem.setToolTipText("Erase");
+		eraseToolItem.setImage(Activator.getImageDescriptor(
+				"icons/editor/erase.png").createImage());
+		
+		// Not enabled if bmp
+		if (imageData.getTransparencyType() == SWT.TRANSPARENCY_NONE) {
+			eraseToolItem.setToolTipText("Erase disabled in bmp files and transparency disabled images");
+			eraseToolItem.setEnabled(false);
+		}
+		
+		selectToolItem(paintToolItem);
+
+		new ToolItem(toolBar, SWT.SEPARATOR);
+	}
+	
 	@Override
 	public void createPartControl(Composite parent_original) {
 
@@ -142,9 +210,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 		ToolBar toolBar = new ToolBar(parent_original, SWT.FLAT);
 
-		currentColorToolItem = new ToolItem(toolBar, SWT.CHECK);
-		currentColorToolItem.setToolTipText("Current color");
-		currentColorToolItem.setSelection(false);
+		createToolItems(toolBar);
 		
 		currentColorToolItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
@@ -178,32 +244,9 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 			}
 		});
 
-		// initialize color selection
-		// get first non transparent one
-		for (PixelItem item : pixels) {
-			if (item.alpha == 255) {
-				colorPickerSelection = (PixelItem) item.clone();
-				break;
-			}
-		}
-		// if not found, get the first color
-		if (colorPickerSelection == null) {
-			colorPickerSelection = (PixelItem) pixels.get(0).clone();
-		}
-		currentColorToolItem
-				.setImage(createImageForColorSelection(colorPickerSelection));
 
-		new ToolItem(toolBar, SWT.SEPARATOR);
-
-		paintToolItem = new ToolItem(toolBar, SWT.CHECK);
-		paintToolItem.setToolTipText("Paint");
-		paintToolItem.setSelection(false);
-		paintToolItem.setImage(Activator.getImageDescriptor(
-				"icons/editor/paint.png").createImage());
 		paintToolItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				// for the moment, only selected colors with the color picker is
-				// allowed
 				if (colorPickerSelection == null) {
 					MessageDialog.openInformation(Display.getDefault()
 							.getActiveShell(), "Info",
@@ -214,12 +257,22 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				}
 			}
 		});
+		
 
-		fillToolItem = new ToolItem(toolBar, SWT.CHECK);
-		fillToolItem.setToolTipText("Paint");
-		fillToolItem.setSelection(false);
-		fillToolItem.setImage(Activator.getImageDescriptor(
-				"icons/editor/fill.png").createImage());
+		unfilledRectangleToolItem.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				if (colorPickerSelection == null) {
+					MessageDialog.openInformation(Display.getDefault()
+							.getActiveShell(), "Info",
+							"Pick a color from the image before painting");
+					selectToolItem(colorPickerToolItem);
+				} else {
+					selectToolItem(unfilledRectangleToolItem);
+				}
+			}
+		});
+
+
 		fillToolItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				// for the moment, only selected colors with the color picker is
@@ -235,38 +288,19 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 			}
 		});
 
-		colorPickerToolItem = new ToolItem(toolBar, SWT.CHECK);
-		colorPickerToolItem.setToolTipText("Pick Color");
-		colorPickerToolItem.setSelection(false);
-		colorPickerToolItem.setImage(Activator.getImageDescriptor(
-				"icons/editor/colorPicker.png").createImage());
+
 		colorPickerToolItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				selectToolItem(colorPickerToolItem);
 			}
 		});
 
-		new ToolItem(toolBar, SWT.SEPARATOR);
 
-		eraseToolItem = new ToolItem(toolBar, SWT.CHECK);
-		eraseToolItem.setToolTipText("Erase");
-		eraseToolItem.setSelection(true);
-		eraseToolItem.setImage(Activator.getImageDescriptor(
-				"icons/editor/erase.png").createImage());
 		eraseToolItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				selectToolItem(eraseToolItem);
 			}
 		});
-
-		// Not enabled if bmp
-		if (imageData.getTransparencyType() == SWT.TRANSPARENCY_NONE) {
-			eraseToolItem.setToolTipText("Erase disabled in bmp files and transparency disabled images");
-			eraseToolItem.setEnabled(false);
-			selectToolItem(paintToolItem);
-		}
-
-		new ToolItem(toolBar, SWT.SEPARATOR);
 
 		addZoomToolItems(toolBar);
 
@@ -322,6 +356,15 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					gc.drawRectangle(0, 0, pixelLength * iconWidth, pixelLength
 							* iconHeight);
 				}
+				
+				// Paint rectangle selection
+				if (unfilledRectangleToolItem.getSelection()){
+					if (drawing){
+						if (rectangle != null){
+							gc.drawRectangle(rectangle);
+						}
+					}
+				}
 			}
 
 		});
@@ -336,6 +379,13 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		applyZoom(ZOOM_INITIAL);
 	}
 
+
+
+	/**
+	 * Perform Save
+	 * @param fileAbsPath
+	 * @param monitor
+	 */
 	public void performSave(String fileAbsPath, IProgressMonitor monitor) {
 		monitor.beginTask("Save", 1);
 		ImageData newImageData = (ImageData) imageData.clone();
@@ -474,6 +524,13 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 						drawing = true;
 						paintPixel(colorPickerSelection, selectedPixel);
 					}
+					// Unfilled Rectangle
+					else if (unfilledRectangleToolItem.getSelection()){
+						drawing = true;
+						rectangle = new Rectangle(e.x, e.y, 2, 2);
+						// TODO improve
+						canvas.redraw();
+					}
 					// Fill
 					else if (fillToolItem.getSelection()) {
 						drawing = false;
@@ -491,7 +548,6 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					}
 				}
 			}
-
 		});
 
 		// Mouse Move
@@ -509,6 +565,13 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 						else if (paintToolItem.getSelection()) {
 							paintPixel(colorPickerSelection, selectedPixel);
 						}
+						// Unfilled Rectangle
+						else if (unfilledRectangleToolItem.getSelection()){
+							rectangle.width = e.x - rectangle.x;
+							rectangle.height = e.y - rectangle.y;
+							// TODO improve
+							canvas.redraw();
+						}
 					}
 				}
 			}
@@ -517,11 +580,70 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		// Mouse Up
 		canvas.addListener(SWT.MouseUp, new Listener() {
 			public void handleEvent(Event e) {
+				if (drawing){
+					if (unfilledRectangleToolItem.getSelection()){
+						paintUnfilledRectangle();
+						rectangle = null;
+						canvas.redraw();
+					}
+				}
 				drawing = false;
 			}
+
 		});
 	}
 
+	private void paintHorizontalLine(PixelItem originPixel, PixelItem otherPixel){
+		paintPixel(colorPickerSelection,originPixel);
+		paintPixel(colorPickerSelection,otherPixel);
+		// we should go from left to right
+		if (otherPixel.realPosition.x > originPixel.realPosition.x){
+			PixelItem rightPixel = getRightPixel(originPixel);
+			while (rightPixel!=null && rightPixel.realPosition.x != otherPixel.realPosition.x){
+				paintPixel(colorPickerSelection,rightPixel);
+				rightPixel = getRightPixel(rightPixel);
+			}
+		} else if (otherPixel.realPosition.x < originPixel.realPosition.x) {
+			// from right to left
+			PixelItem leftPixel = getLeftPixel(originPixel);
+			while (leftPixel!=null && leftPixel.realPosition.x != otherPixel.realPosition.x){
+				paintPixel(colorPickerSelection,leftPixel);
+				leftPixel = getLeftPixel(leftPixel);
+			}
+		}
+	}
+	
+	private void paintVerticalLine(PixelItem originPixel, PixelItem otherPixel){
+		paintPixel(colorPickerSelection,originPixel);
+		paintPixel(colorPickerSelection,otherPixel);
+		// we should go from top to bottom
+		if (otherPixel.realPosition.y > originPixel.realPosition.y){
+			PixelItem downPixel = getDownPixel(originPixel);
+			while (downPixel!=null && downPixel.realPosition.y != otherPixel.realPosition.y){
+				paintPixel(colorPickerSelection,downPixel);
+				downPixel = getDownPixel(downPixel);
+			}
+		} else if (otherPixel.realPosition.y < originPixel.realPosition.y) {
+			// from bottom to up
+			PixelItem upPixel = getUpPixel(originPixel);
+			while (upPixel!=null && upPixel.realPosition.y != otherPixel.realPosition.y){
+				paintPixel(colorPickerSelection,upPixel);
+				upPixel = getUpPixel(upPixel);
+			}
+		}
+	}
+	
+	private void paintUnfilledRectangle() {
+		PixelItem origin = getCanvasPixel(rectangle.x,rectangle.y);
+		PixelItem end = getCanvasPixel(rectangle.x + rectangle.width, rectangle.y + rectangle.height);
+		PixelItem bottomLeft = pixels.get(getPixelPositionInTheArray(origin.realPosition.x, end.realPosition.y));
+		PixelItem upRight = pixels.get(getPixelPositionInTheArray(end.realPosition.x, origin.realPosition.y));		
+		paintHorizontalLine(origin, upRight);
+		paintHorizontalLine(bottomLeft, end);
+		paintVerticalLine(origin, bottomLeft);
+		paintVerticalLine(end, upRight);
+	}
+	
 	/**
 	 * Create a fancy square image
 	 * @param colorPickerSelection
@@ -605,6 +727,8 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		}
 		return false;
 	}
+	
+
 
 	private boolean isDifferentColor(PixelItem pixelItem1, PixelItem pixelItem2) {
 		return (pixelItem1.alpha != pixelItem2.alpha || !pixelItem1.color
@@ -774,6 +898,18 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				e.printStackTrace();
 			}
 			return o;
+		}
+		
+		@Override
+		public String toString() {
+			String _toString = "";
+			if (realPosition != null){
+				_toString = "[" + realPosition.x + "," + realPosition.y + "]";
+			}
+			if (color != null){
+				_toString = _toString + " color=" + color.getRGB() + " alpha=" + alpha;
+			}
+			return _toString;
 		}
 	}
 
