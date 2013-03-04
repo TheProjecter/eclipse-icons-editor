@@ -5,7 +5,7 @@
    <extension
          point="org.eclipse.ui.views">
       <category
-            name="Eclipse Icons Editor"
+            name="Icons Editor"
             id="org.eclipse_icons.editor">
       </category>
       <view
