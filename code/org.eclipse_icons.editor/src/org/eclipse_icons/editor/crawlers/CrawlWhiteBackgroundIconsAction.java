@@ -219,7 +219,8 @@ public class CrawlWhiteBackgroundIconsAction extends Action {
 		} else if (UIUtils.isImageFile(file)){
 			Image image = UIUtils.getImage(file.getAbsolutePath());
 			if (image!=null){
-				if (hasWhiteBackground(image.getImageData())){
+				ImageData imageData = image.getImageData();
+				if (imageData.width <= 200 && imageData.height <= 200 && hasWhiteBackground(imageData)){
 					// found
 					paths.add(file.getAbsolutePath());
 				}

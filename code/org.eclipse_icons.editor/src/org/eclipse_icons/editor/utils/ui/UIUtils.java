@@ -176,6 +176,14 @@ public class UIUtils {
 		return isImageFile(file.getName());
 	}
 	
+	public static boolean isTransparentImageFile(IResource iResource){
+		String extension = iResource.getFileExtension();
+		if (extension!=null && extension.equals("png") || extension.equals("gif")){
+			return true;
+		}
+		return false;
+	}
+	
 	public static boolean folderContainsImages(IFolder folder){
 		try {
 			for (IResource resource: folder.members()){
