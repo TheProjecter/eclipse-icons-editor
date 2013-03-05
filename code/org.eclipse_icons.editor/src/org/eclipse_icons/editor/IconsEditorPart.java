@@ -1,5 +1,6 @@
 package org.eclipse_icons.editor;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -402,7 +403,23 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	}
 
 
-
+	public boolean checkIfWritable(String fileAbsPath){
+		// Check if read only
+		File file = new File(fileAbsPath);
+		if (file.exists() && !file.canWrite()){
+			boolean result = MessageDialog.openQuestion(Display.getDefault()
+					.getActiveShell(), "File cannot be written",
+					"This file is read only. Do you want to make it writable?");
+			if (result){
+				file.setWritable(true);
+				return true;
+			} else {
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	/**
 	 * Perform Save
 	 * @param fileAbsPath
@@ -410,10 +427,12 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	 */
 	public void performSave(String fileAbsPath, IProgressMonitor monitor) {
 		monitor.beginTask("Save", 1);
+		
+		// Start the process
 		ImageData newImageData = (ImageData) imageData.clone();
 
 		// Special case where we have a gif or png with transparency none and we created transparent pixels
-		if (newImageData.getTransparencyType() == SWT.TRANSPARENCY_NONE && UIUtils.isTransparentImageFile(input.getFile())){
+		if (newImageData.getTransparencyType() == SWT.TRANSPARENCY_NONE && UIUtils.isTransparentImageFile(input.getFile()) && !newImageData.palette.isDirect){
 			for (PixelItem pixelItem : pixels) {
 				if (pixelItem.alpha == 0){
 					int transparentPixel = getAvailablePalettePosition(newImageData);
@@ -505,11 +524,13 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {
-		performSave(input.getFile().getLocation().toOSString(), monitor);
-
-		// Set editor as no dirty
-		modified = false;
-		firePropertyChange(IEditorPart.PROP_DIRTY);
+		String absPath = input.getFile().getLocation().toOSString();
+		if (checkIfWritable(absPath)){
+			performSave(absPath, monitor);
+			// Set editor as no dirty
+			modified = false;
+			firePropertyChange(IEditorPart.PROP_DIRTY);
+		}
 	}
 
 	@Override
@@ -522,12 +543,13 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 			IPath selectedContainer = (IPath) dialog.getResult()[0];
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 			IResource res = root.findMember(selectedContainer);
-			String location = res.getLocation().append(dialog.getFileName())
+			String absPath = res.getLocation().append(dialog.getFileName())
 					.toOSString();
-			performSave(location, new NullProgressMonitor());
-
-			// Open the file
-			UIUtils.openFile(location);
+			if (checkIfWritable(absPath)){
+				performSave(absPath, new NullProgressMonitor());
+				// Open the file
+				UIUtils.openFile(absPath);
+			}
 		}
 	}
 

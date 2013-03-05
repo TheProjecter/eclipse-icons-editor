@@ -178,7 +178,7 @@ public class UIUtils {
 	
 	public static boolean isTransparentImageFile(IResource iResource){
 		String extension = iResource.getFileExtension();
-		if (extension!=null && extension.equals("png") || extension.equals("gif")){
+		if (extension!=null && extension.equalsIgnoreCase("png") || extension.equalsIgnoreCase("gif")){
 			return true;
 		}
 		return false;
