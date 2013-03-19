@@ -494,8 +494,8 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		}
 
 		// Save it
-		int imageFormat = Utils.getImageFormatFromExtension(input.getFile()
-				.getFileExtension());		
+		int imageFormat = Utils.getImageFormat(imageData, input.getFile()
+				.getFileExtension());
 		Utils.saveIconToFile(newImageData, fileAbsPath, imageFormat);
 
 		monitor.worked(1);

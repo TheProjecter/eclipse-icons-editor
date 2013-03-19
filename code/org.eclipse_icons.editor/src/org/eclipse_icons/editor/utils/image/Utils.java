@@ -60,22 +60,29 @@ public class Utils {
 		return null;
 	}
 
-	public static int getImageFormatFromExtension(String extension) {
+	// TODO Improve this method, make it more precise.
+	public static int getImageFormat(ImageData imageData, String extension) {
+		int imageFormat = SWT.IMAGE_PNG;
 		if (extension.equalsIgnoreCase("png")) {
-			return SWT.IMAGE_PNG;
+			imageFormat = SWT.IMAGE_PNG;
 		} else if (extension.equalsIgnoreCase("bmp")) {
-			return SWT.IMAGE_BMP;
+			imageFormat = SWT.IMAGE_BMP;
 		} else if (extension.equalsIgnoreCase("gif")) {
-			return SWT.IMAGE_GIF;
+			imageFormat = SWT.IMAGE_GIF;
 		} else if (extension.equalsIgnoreCase("jpg")
 				|| extension.equalsIgnoreCase("jpeg")) {
-			return SWT.IMAGE_JPEG;
+			imageFormat = SWT.IMAGE_JPEG;
 		} else if (extension.equalsIgnoreCase("tiff")) {
-			return SWT.IMAGE_TIFF;
+			imageFormat = SWT.IMAGE_TIFF;
 		} else if (extension.equalsIgnoreCase("ico")) {
-			return SWT.IMAGE_ICO;
+			imageFormat = SWT.IMAGE_ICO;
 		}
-		return SWT.IMAGE_PNG;
+		// Corrections
+		// Gif maximum depth is 8. Otherwise probably it is a renamed png
+		if (imageFormat == SWT.IMAGE_GIF && imageData.depth>8){
+			imageFormat = SWT.IMAGE_PNG;
+		}
+		return imageFormat;
 	}
 
 	public static Image cropImage(Image sourceImage, int x, int y, int height,

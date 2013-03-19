@@ -122,7 +122,7 @@ public class ImageNewWizard extends Wizard implements INewWizard {
 		
 		// Initialize image content
 		ImageData newImageData = Utils.createEmptyDirectPaletteImageData(width,height,IMAGE_DEPTH);	
-		int format = Utils.getImageFormatFromExtension(file.getFileExtension());
+		int format = Utils.getImageFormat(newImageData, file.getFileExtension());
 		String filePath = file.getLocation().toString();
 		Utils.saveIconToFile(newImageData, filePath, format);
 
