@@ -18,6 +18,7 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse_icons.editor.utils.ui.UIUtils;
 
@@ -251,6 +252,23 @@ public class Utils {
 		}
 		newImageData.alphaData = alphaData;
 		return newImageData;
+	}
+	
+	public static int getRGBPositionInPalette(ImageData imageData, RGB rgb){
+		if (imageData.palette != null && imageData.palette.getRGBs()!=null){
+			for (int i= 0; i<imageData.palette.getRGBs().length; i++){
+				if (imageData.palette.getRGBs()[i].equals(rgb)){
+					// Same color found
+					if (imageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL){
+						// And it is not the transparency pixel position
+						if (imageData.transparentPixel != i){
+							return i;
+						}
+					}
+				}
+			}
+		}
+		return -1;
 	}
 
 }

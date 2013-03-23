@@ -58,27 +58,27 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	// Editor
 	public static final String ID = "org.eclipse_icons.editor.iconEditor";
 	private FileEditorInput input;
-	Canvas canvas = null;
+	private Canvas canvas = null;
 
 	// The original icon dimension
-	int iconHeight;
-	int iconWidth;
+	private int iconHeight;
+	private int iconWidth;
 
 	// used for isDirty editor property
 	boolean modified = false;
 
-	ImageData imageData;
+	private ImageData imageData;
 
 	// pixels list. Size: iconWidth * iconHeight
 	protected List<PixelItem> pixels = new ArrayList<PixelItem>();
 
-	PixelItem colorPickerSelection = null;
+	private PixelItem colorPickerSelection = null;
 	
 	// For rectangles, selection...
-	Rectangle rectangle = null;
+	private Rectangle rectangle = null;
 	
 	// Whether the user is drawing/erasing something
-	boolean drawing = false;
+	private Boolean drawing = false;
 
 	// States
 	private ToolItem currentColorToolItem;
@@ -207,12 +207,14 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		
 		new ToolItem(toolBar, SWT.SEPARATOR);
 		
-
-
+		// Set the initial tool
 		selectToolItem(paintToolItem);
 	}
 	
 	@Override
+	/**
+	 * Create Part Control
+	 */
 	public void createPartControl(Composite parent_original) {
 
 		GridLayout gridLayout = new GridLayout();
@@ -232,15 +234,37 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					ColorDialog colorDialog = new ColorDialog(Display.getCurrent().getActiveShell());
 					selectedColor = colorDialog.open();
 				} else {
-					// Indirect palette
-					MessageDialog.openInformation(Display.getDefault()
-					.getActiveShell(), "Info",
-					"Images with indirect palette are not supported yet...\nPick a color from the image");
-					selectToolItem(colorPickerToolItem);
-					// TODO implement indirect palette
-					// PaletteDialog dialog = new PaletteDialog(Display.getCurrent().getActiveShell());
-					// dialog.setPalette(imageData.palette);
-					// dialog.open();
+					// Indirect palette					
+					// Is there a non used position in the palette?
+					int palettePosition = getAvailablePalettePosition(imageData);
+					// No position... not supported yet.
+					if (palettePosition==-1){
+						// Error image
+						MessageDialog.openError(Display.getDefault()
+								.getActiveShell(), "Info",
+								"Sorry but all positions in the image palette are being used.\nPick a color from the image");
+						
+						selectToolItem(colorPickerToolItem);
+						
+						// Image palette
+						// PaletteDialog dialog = new PaletteDialog(Display.getCurrent().getActiveShell());
+						// dialog.setPalette(imageData.palette);
+						// dialog.setText("Info window, current image palette.");
+						// dialog.open();
+					} else {
+						// The user selects a color
+						ColorDialog colorDialog = new ColorDialog(Display.getCurrent().getActiveShell());
+						selectedColor = colorDialog.open();
+						if (selectedColor!=null){
+							// Check if the selected color is already in the palette
+							int alreadyInPalettePosition = Utils.getRGBPositionInPalette(imageData, selectedColor);
+							// Not found so
+							if (alreadyInPalettePosition == -1){
+								// Add the color to the palette
+								imageData.palette.getRGBs()[palettePosition] = selectedColor;
+							}
+						}
+					}
 				}
 				
 				if (selectedColor != null){
@@ -252,6 +276,11 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				
 				// Never show it as selected
 				currentColorToolItem.setSelection(false);
+				
+				// If colorPicker was the active tool item we change it to paint tool
+				if (colorPickerToolItem.getSelection()){
+					selectToolItem(paintToolItem);
+				}
 			}
 		});
 
@@ -318,10 +347,30 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 			}
 		});
 
-
+		
 		eraseToolItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				selectToolItem(eraseToolItem);
+				boolean possible = true;
+				// Special case where we have a gif or png with transparency none and we want to create a transparent pixels
+				if (imageData.getTransparencyType() == SWT.TRANSPARENCY_NONE && UIUtils.isTransparentImageFile(input.getFile()) && !imageData.palette.isDirect){
+					// check if there is position
+					int transparentPixel = getAvailablePalettePosition(imageData);
+					// not found space in the palette for the transparent pixel...
+					if (transparentPixel == -1){
+						MessageDialog.openError(Display.getDefault()
+										.getActiveShell(), "Info",
+										"All positions in the palette are being used. Imposible to create transparent pixel.");
+						possible = false;
+					} else {
+						// we set the transparent pixel
+						imageData.transparentPixel = transparentPixel;
+					}
+				}
+				if (possible){
+					selectToolItem(eraseToolItem);
+				} else {
+					eraseToolItem.setSelection(false);
+				}
 			}
 		});
 
@@ -430,25 +479,6 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		
 		// Start the process
 		ImageData newImageData = (ImageData) imageData.clone();
-
-		// Special case where we have a gif or png with transparency none and we created transparent pixels
-		if (newImageData.getTransparencyType() == SWT.TRANSPARENCY_NONE && UIUtils.isTransparentImageFile(input.getFile()) && !newImageData.palette.isDirect){
-			for (PixelItem pixelItem : pixels) {
-				if (pixelItem.alpha == 0){
-					int transparentPixel = getAvailablePalettePosition(newImageData);
-					// not found space in the palette for the transparent pixel...
-					if (transparentPixel == -1){
-						MessageDialog.openError(Display.getDefault()
-								.getActiveShell(), "Info",
-								"All positions in the palette are being used. Imposible to create transparent pixel.");
-						break;
-					} else {
-						newImageData.transparentPixel = transparentPixel;
-						break;
-					}
-				}
-			}
-		}
 		
 		// Modify imageData with pixels information
 		for (PixelItem pixelItem : pixels) {
@@ -476,11 +506,11 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				if ((newImageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL && pixelItem.alpha != 0)
 						|| newImageData.getTransparencyType() != SWT.TRANSPARENCY_PIXEL) {
 					// Get the index of the color in the palette
-					for (int index = 0; index < newImageData.getRGBs().length; index++) {
-						if (newImageData.getRGBs()[index].equals(color)) {
+					for (int i = 0; i < newImageData.getRGBs().length; i++) {
+						if (newImageData.getRGBs()[i].equals(color)) {
 							// Save the new index
 							newImageData.setPixel(pixelItem.realPosition.x,
-									pixelItem.realPosition.y, index);
+									pixelItem.realPosition.y, i);
 							break;
 						}
 					}
@@ -1063,6 +1093,10 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 	@Override
 	public void dispose() {
+		input = null;
+		if (canvas!=null){
+			canvas.dispose();
+		}
 		super.dispose();
 		pixels.clear();
 		pixels = null;
