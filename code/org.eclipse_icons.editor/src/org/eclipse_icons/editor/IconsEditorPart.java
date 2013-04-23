@@ -776,9 +776,13 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 	@Override
 	public boolean isSaveAsAllowed() {
+		// Always true
 		return true;
 	}
 
+	/**
+	 * Canvas Mouse Listeners
+	 */
 	private void createCanvasMouseListeners() {
 		// Mouse Down
 		canvas.addListener(SWT.MouseDown, new Listener() {
@@ -815,13 +819,31 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					// Selection
 					else if (selectToolItem.getSelection()) {
 
-						// in case starts a selection after another selection.
-						// normal case of selecting another toolItem is managed
-						// in selectToolItem
-						selectionRectangle = null;
-						selected = false;
-						selectedAndMoved = false;
-
+						// Another selection was started?
+						if (selected){
+							// Check if it clicked inside the selection
+							boolean clickedInsideSelection = false;
+							for (PixelItem pixelItem : selectedPixels){
+								if(selectedPixel.pixelRectangle.intersects(pixelItem.pixelRectangle)){
+									clickedInsideSelection = true;
+									break;
+								}
+							}
+							// If not clicked inside blend and remove
+							if (!clickedInsideSelection){
+								if (selectedAndMoved){
+									editorUtils.blendSelection();
+								}
+								deactivateSelection();
+							} else {
+								// If clicked inside selection allows to move it
+								// TODO Only arrows supported for the moment
+								MessageDialog.openInformation(Display.getDefault()
+										.getActiveShell(), "Info",
+										"Use arrows to move the selection.");
+							}
+						}
+						
 						paintRectangle = new Rectangle(e.x, e.y, 2, 2);
 						canvas.redraw();
 					}

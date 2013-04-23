@@ -523,9 +523,11 @@ public class EditorUtils {
 	public void blendSelection() {
 		// Loop selection
 		for (int y = editor.selectionRectangle.y; y < editor.selectionRectangle.y + editor.selectionRectangle.height; y++){
+			// Do nothing with positions out of the canvas
+			if (y>=0 && y<editor.iconHeight){
 			for (int x = editor.selectionRectangle.x; x < editor.selectionRectangle.x + editor.selectionRectangle.width; x++){
 				// Do nothing with positions out of the canvas
-				if (x < editor.iconWidth && y < editor.iconHeight){
+				if (x>=0 && x<editor.iconWidth){
 					// Get pixels
 					PixelItem originalPixel = editor.pixels.get(getPixelPositionInTheArray(x,y));
 					PixelItem selectionPixel = editor.selectedPixels.get((y-editor.selectionRectangle.y)*editor.selectionRectangle.width + (x-editor.selectionRectangle.x));
@@ -543,6 +545,7 @@ public class EditorUtils {
 					// update data
 					paintPixel(blendedPixelItem, originalPixel);
 				}
+			}
 			}
 		}
 	}
