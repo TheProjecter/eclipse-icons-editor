@@ -23,6 +23,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.osgi.service.datalocation.Location;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
@@ -250,6 +251,23 @@ public class UIUtils {
 			return null;
 		}
 		return resource.getLocation().toOSString();
+	}
+	
+	public static boolean checkIfWritable(String fileAbsPath){
+		// Check if read only
+		File file = new File(fileAbsPath);
+		if (file.exists() && !file.canWrite()){
+			boolean result = MessageDialog.openQuestion(Display.getDefault()
+					.getActiveShell(), "File cannot be written",
+					"This file is read only. Do you want to make it writable?");
+			if (result){
+				file.setWritable(true);
+				return true;
+			} else {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 }
