@@ -10,7 +10,6 @@ import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.ui.themes.ColorUtil;
 
 /**
  * Editor Utils
@@ -529,21 +528,43 @@ public class EditorUtils {
 				// Do nothing with positions out of the canvas
 				if (x>=0 && x<editor.iconWidth){
 					// Get pixels
-					PixelItem originalPixel = editor.pixels.get(getPixelPositionInTheArray(x,y));
-					PixelItem selectionPixel = editor.selectedPixels.get((y-editor.selectionRectangle.y)*editor.selectionRectangle.width + (x-editor.selectionRectangle.x));
-
-					// ratio for blending, selection is superposed
-					int ratio = new Double((selectionPixel.alpha / 255.0) * 100.0).intValue();
-					RGB blendedRGB = ColorUtil.blend(selectionPixel.color.getRGB(), originalPixel.color.getRGB(), ratio);
+					PixelItem b = editor.pixels.get(getPixelPositionInTheArray(x,y));
+					PixelItem a = editor.selectedPixels.get((y-editor.selectionRectangle.y)*editor.selectionRectangle.width + (x-editor.selectionRectangle.x));
 					
-					// newAlpha is the maximum of both pixels
-					int newAlpha = Math.min(255, Math.max(selectionPixel.alpha, originalPixel.alpha));
+					// See external references of the alpha compositing (blending) algorithm
+					double alphaA = a.alpha / 255.0;
+					double alphaB = b.alpha / 255.0;
+					
+					double newAlpha = alphaA + (alphaB * (1.0-alphaA));
+					
+					double RA = a.color.getRed() / 255.0;
+					double GA = a.color.getGreen() / 255.0;
+					double BA = a.color.getBlue() / 255.0;
+					
+					double RB = b.color.getRed() / 255.0;
+					double GB = b.color.getGreen() / 255.0;
+					double BB = b.color.getBlue() / 255.0;
+
+					double newR = (RA * alphaA) + ((RB * alphaB) * (1.0-alphaA));
+					double newG = (GA * alphaA) + ((GB * alphaB) * (1.0-alphaA));
+					double newB = (BA * alphaA) + ((BB * alphaB) * (1.0-alphaA));
+					
+					if (newAlpha!=0.0){
+						newR = newR / newAlpha;
+						newG = newG / newAlpha;
+						newB = newB / newAlpha;
+					} else {
+						newR = RA;
+						newG = GA;
+						newB = BA;
+					}
+					
 					PixelItem blendedPixelItem = new PixelItem();
-					blendedPixelItem.alpha = newAlpha;
-					blendedPixelItem.color = new Color(Display.getDefault(), blendedRGB);
+					blendedPixelItem.alpha = new Double(newAlpha * 255.0).intValue();
+					blendedPixelItem.color = new Color(Display.getDefault(), new Double(newR * 255.0).intValue(), new Double(newG * 255.0).intValue(), new Double(newB * 255.0).intValue());
 					
 					// update data
-					paintPixel(blendedPixelItem, originalPixel);
+					paintPixel(blendedPixelItem, b);
 				}
 			}
 			}
