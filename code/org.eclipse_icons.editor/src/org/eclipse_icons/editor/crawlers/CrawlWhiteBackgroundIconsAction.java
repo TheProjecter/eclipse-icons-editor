@@ -49,6 +49,7 @@ public class CrawlWhiteBackgroundIconsAction extends Action {
 	final String KEY_IMAGES = "images";
 	List<String> paths = new ArrayList<String>();
 	Button copyClipboardButton;
+	Button discardButton;
 	
 	public void run() {
 		
@@ -79,7 +80,7 @@ public class CrawlWhiteBackgroundIconsAction extends Action {
 			Label label = new Label(shell, SWT.NONE);
 			label.setText("Potential white background icons found: "+ paths.size());
 			
-			final Table table = new Table(shell, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+			final Table table = new Table(shell, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI);
 			GridData gridDataTable = new GridData(GridData.HORIZONTAL_ALIGN_FILL
 					| GridData.VERTICAL_ALIGN_FILL);
 			gridDataTable.grabExcessVerticalSpace = true;
@@ -93,7 +94,7 @@ public class CrawlWhiteBackgroundIconsAction extends Action {
 			gc.dispose();
 
 			copyClipboardButton = new Button(shell, SWT.PUSH);
-			copyClipboardButton.setText("Copy path to clipboard");
+			copyClipboardButton.setText("Copy paths to clipboard");
 			copyClipboardButton.setImage(PlatformUI.getWorkbench().getSharedImages()
 					.getImage(ISharedImages.IMG_TOOL_COPY));
 			copyClipboardButton.setEnabled(false);
@@ -103,7 +104,7 @@ public class CrawlWhiteBackgroundIconsAction extends Action {
 					String textData = "";
 					TableItem[] selectedItems = table.getSelection();
 					for (TableItem item : selectedItems){
-						textData = textData + item.getText();
+						textData = textData + item.getText() + "\n";
 					}
 			        TextTransfer textTransfer = TextTransfer.getInstance();
 			        cb.setContents(new Object[] { textData },
@@ -111,6 +112,33 @@ public class CrawlWhiteBackgroundIconsAction extends Action {
 				}
 			};
 			copyClipboardButton.addListener(SWT.Selection, listener);
+			
+			discardButton = new Button(shell, SWT.PUSH);
+			discardButton.setText("Discard");
+			discardButton.setImage(PlatformUI.getWorkbench().getSharedImages()
+					.getImage(ISharedImages.IMG_ETOOL_CLEAR));
+			discardButton.setEnabled(false);
+			Listener discardListener = new Listener() {
+				public void handleEvent(Event event) {
+					TableItem[] selectedItems = table.getSelection();
+					for (TableItem item : selectedItems){
+						String foundPath = null;
+						for(String path : paths){
+							if (item.getText().equals(path)){
+								foundPath = path;
+								break;
+							}
+						}
+						if (foundPath!=null){
+							paths.remove(foundPath);
+						}
+					}
+					table.removeAll();
+					fillTable(table);
+					table.redraw();
+				}
+			};
+			discardButton.addListener(SWT.Selection, discardListener);
 			
 			Listener paintListener = new Listener() {
 				public void handleEvent(Event event) {
@@ -184,22 +212,16 @@ public class CrawlWhiteBackgroundIconsAction extends Action {
 					if (!copyClipboardButton.isEnabled()) {
 						copyClipboardButton.setEnabled(true);
 					}
+					if (!discardButton.isEnabled()){
+						discardButton.setEnabled(true);
+					}
 				};
 			});
 			
 			table.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
 
 			// fill table
-			for (String path: paths){
-				TableItem item = new TableItem(table, SWT.NONE);
-				item.setText(path);
-				item.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
-				Image[] itemImages = new Image[COLUMN_COUNT];
-				item.setData(KEY_IMAGES, itemImages);
-				for (int j = 0; j < COLUMN_COUNT; j++) {
-					itemImages[j] = UIUtils.getImage(path);
-				}
-			}
+			fillTable(table);
 			
 			// open table
 			shell.pack();
@@ -207,6 +229,20 @@ public class CrawlWhiteBackgroundIconsAction extends Action {
 					shell.getBounds().width + 100, 500);
 			shell.open();
 		}
+		}
+	}
+	
+	public void fillTable(Table table){
+		// fill table
+		for (String path: paths){
+			TableItem item = new TableItem(table, SWT.NONE);
+			item.setText(path);
+			item.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+			Image[] itemImages = new Image[COLUMN_COUNT];
+			item.setData(KEY_IMAGES, itemImages);
+			for (int j = 0; j < COLUMN_COUNT; j++) {
+				itemImages[j] = UIUtils.getImage(path);
+			}
 		}
 	}
 
