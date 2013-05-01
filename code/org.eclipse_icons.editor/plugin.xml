@@ -107,6 +107,30 @@
             </with>
          </activeWhen>
       </handler>
+      <handler
+            class="org.eclipse_icons.editor.UndoCommandHandler"
+            commandId="org.eclipse.ui.edit.undo">
+         <activeWhen>
+            <with
+                  variable="activeEditorId">
+               <equals
+                     value="org.eclipse_icons.editor.iconEditor">
+               </equals>
+            </with>
+         </activeWhen>
+      </handler>
+      <handler
+            class="org.eclipse_icons.editor.RedoCommandHandler"
+            commandId="org.eclipse.ui.edit.redo">
+         <activeWhen>
+            <with
+                  variable="activeEditorId">
+               <equals
+                     value="org.eclipse_icons.editor.iconEditor">
+               </equals>
+            </with>
+         </activeWhen>
+      </handler>
       <!--
       <handler
             class="org.eclipse_icons.editor.CopyCommandHandler"

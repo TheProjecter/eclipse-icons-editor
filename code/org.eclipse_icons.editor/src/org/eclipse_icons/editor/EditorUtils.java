@@ -1,6 +1,7 @@
 package org.eclipse_icons.editor;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -18,6 +19,8 @@ import org.eclipse.swt.widgets.Display;
  */
 public class EditorUtils {
 
+	private static final int UNDO_STACK_LIMIT = 20;
+	
 	private IconsEditorPart editor;
 
 	public EditorUtils(IconsEditorPart editor) {
@@ -570,6 +573,88 @@ public class EditorUtils {
 			}
 		}
 	}
+
+	/**
+	 * Undo
+	 */
+	public void undo() {
+		if (!editor.undoStack.isEmpty()){
+			List<PixelItem> toUpdate = editor.undoStack.pop();
+			List<PixelItem> toPush = cloneListPixelItems(editor.pixels);
+			editor.redoStack.push(toPush);
+			
+			// not modified, set as dirty
+			if (!editor.modified){
+				editor.modified = true;
+				editor.changeDirty();
+			} else {  
+				// modified, check if it should be non dirty
+				if (toUpdate.equals(editor.previousNonDirty) || (editor.previousNonDirty==null && editor.undoStack.isEmpty())){
+					editor.modified = false;
+					editor.changeDirty();
+				}
+			}
+			
+			// update
+			editor.pixels = toUpdate;
+			editor.canvas.redraw();
+		}
+	}
+
+
+	/**
+	 * Redo
+	 */
+	public void redo() {
+		if (!editor.redoStack.isEmpty()){
+			List<PixelItem> toUpdate = editor.redoStack.pop();
+			storeInUndoStack();
+			
+			// not modified, set as dirty
+			if (!editor.modified){
+				editor.modified = true;
+				editor.changeDirty();
+			} else { 
+				// modified, check if it should be non dirty
+				if (toUpdate.equals(editor.previousNonDirty) || (editor.previousNonDirty==null && editor.redoStack.isEmpty())){
+					editor.modified = false;
+					editor.changeDirty();
+				}
+			}
+			
+			// update
+			editor.pixels = toUpdate;
+			editor.canvas.redraw();
+		}
+	}
+
+	/**
+	 * Store in undo stack
+	 * This method is called before any modification
+	 */
+	public void storeInUndoStack() {
+		// There is no place, remove the first one...
+		if (editor.undoStack.size() >= UNDO_STACK_LIMIT){
+			editor.undoStack.remove(editor.undoStack.firstElement());
+		}
+		// push
+		List<PixelItem> toPush = cloneListPixelItems(editor.pixels);
+		if (!editor.modified){
+			editor.previousNonDirty = toPush;
+		}
+		editor.undoStack.push(toPush);
+	}
 	
-	
+	/**
+	 * Clone pixels to avoid changes
+	 * @param pixelItems
+	 * @return
+	 */
+	public List<PixelItem> cloneListPixelItems(List<PixelItem> pixelItems){
+		List<PixelItem> clonedPixels = new ArrayList<PixelItem>();
+		for (PixelItem pixelItem : pixelItems){
+			clonedPixels.add((PixelItem)pixelItem.clone());
+		}
+		return clonedPixels;
+	}
 }

@@ -9,10 +9,10 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 /**
- * DeleteCommandHandler
+ * UndoCommandHandler
  * @author Jabier Martinez
  */
-public class DeleteCommandHandler extends AbstractHandler {
+public class UndoCommandHandler extends AbstractHandler {
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -21,11 +21,10 @@ public class DeleteCommandHandler extends AbstractHandler {
 	    IEditorPart editorPart = page.getActiveEditor();
 	    if (editorPart instanceof IconsEditorPart) {
 	    	IconsEditorPart editor = (IconsEditorPart)editorPart;
-	    	
-			// Save previous in undoStack
-			editor.editorUtils.storeInUndoStack();
-			
-	    	editor.editorUtils.delete(true);
+	    	editor.editorUtils.undo();
+	    	if (editor.selected){
+	    		editor.deactivateSelection();
+	    	}
 	    }
 		return null;
 	}

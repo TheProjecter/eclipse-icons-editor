@@ -3,6 +3,7 @@ package org.eclipse_icons.editor;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Stack;
 
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -104,7 +105,13 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	protected ZoomUtils zoomUtils;
 
 	public boolean nativelyDoubleBufferedCanvas = false;
-
+	
+	// Undo/Redo stacks
+	// TODO Management of dirty state with undo/redo
+	public Stack<List<PixelItem>> undoStack;
+	public Stack<List<PixelItem>> redoStack;
+	public List<PixelItem> previousNonDirty = null;
+	
 	@Override
 	public void init(IEditorSite site, IEditorInput input)
 			throws PartInitException {
@@ -137,6 +144,10 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		iconWidth = imageData.width;
 		iconHeight = imageData.height;
 		intializePixels(imageData);
+		
+		// Undo redo stacks
+		undoStack = new Stack<List<PixelItem>>();
+		redoStack = new Stack<List<PixelItem>>();
 	}
 
 	/**
@@ -164,7 +175,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		}
 	}
 
-	private void deactivateSelection() {
+	public void deactivateSelection() {
 		paintRectangle = null;
 		selected = false;
 		selectedAndMoved = false;
@@ -306,6 +317,10 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 							|| e.keyCode == SWT.ARROW_UP) {
 						// moved for the first time
 						if (!selectedAndMoved){
+							
+							// Save previous in undoStack
+							editorUtils.storeInUndoStack();
+							
 							editorUtils.delete(false);
 							selectedAndMoved = true;
 						}
@@ -793,6 +808,10 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					// Erase
 					if (eraseToolItem.getSelection()) {
 						drawing = true;
+						
+						// Save previous in undoStack
+						editorUtils.storeInUndoStack();
+						
 						boolean modified = EditorUtils
 								.paintTransparentPixel(selectedPixel);
 						if (modified) {
@@ -802,6 +821,10 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					// Paint
 					else if (paintToolItem.getSelection()) {
 						drawing = true;
+						
+						// Save previous in undoStack
+						editorUtils.storeInUndoStack();
+						
 						boolean modified = editorUtils.paintPixel(
 								colorPickerSelection, selectedPixel);
 						if (modified) {
@@ -850,6 +873,10 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					// Fill
 					else if (fillToolItem.getSelection()) {
 						drawing = false;
+						
+						// Save previous in undoStack
+						editorUtils.storeInUndoStack();
+						
 						boolean modified = editorUtils.fillPixels(
 								(PixelItem) selectedPixel.clone(),
 								selectedPixel);
@@ -905,7 +932,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 						}
 					}
 				}
-				// TODO Select
+				// Select
 				else if (selectToolItem.getSelection()) {
 					if (paintRectangle != null) {
 						PixelItem selectedPixel = editorUtils.getCanvasPixel(
@@ -924,12 +951,24 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		canvas.addListener(SWT.MouseUp, new Listener() {
 			public void handleEvent(Event e) {
 				if (drawing) {
+					
+					// UnfilledRectangle
 					if (unfilledRectangleToolItem.getSelection()) {
+						
+						// Save previous in undoStack
+						editorUtils.storeInUndoStack();
+						
 						editorUtils.paintUnfilledRectangle();
 						paintRectangle = null;
 						canvas.redraw();
 					}
+					
+					// FilledRectangle
 					if (filledRectangleToolItem.getSelection()) {
+						
+						// Save previous in undoStack
+						editorUtils.storeInUndoStack();
+						
 						editorUtils.paintFilledRectangle();
 						paintRectangle = null;
 						canvas.redraw();
@@ -1026,6 +1065,19 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 			selectedPixels = null;
 		}
 		imageData = null;
+		
+		undoStack.clear();
+		undoStack = null;
+		redoStack.clear();
+		redoStack = null;
+		if (previousNonDirty !=null){
+			previousNonDirty.clear();
+			previousNonDirty = null;
+		}
+	}
+
+	public void changeDirty() {
+		firePropertyChange(IEditorPart.PROP_DIRTY);
 	}
 
 }
