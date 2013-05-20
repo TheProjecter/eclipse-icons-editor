@@ -25,7 +25,6 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
@@ -143,7 +142,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		imageData = image.getImageData();
 		iconWidth = imageData.width;
 		iconHeight = imageData.height;
-		intializePixels(imageData);
+		pixels = EditorUtils.initializePixels(imageData);
 		
 		// Undo redo stacks
 		undoStack = new Stack<List<PixelItem>>();
@@ -755,34 +754,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		}
 	}
 
-	/**
-	 * initialize Pixels information with imageData information
-	 * 
-	 * @param imageData
-	 */
-	private void intializePixels(ImageData imageData) {
-		for (int y = 0; y < imageData.height; y++) {
-			for (int x = 0; x < imageData.width; x++) {
-				PixelItem pixel = new PixelItem();
-				int paletteInt = imageData.getPixel(x, y);
-				RGB rgb = imageData.palette.getRGB(paletteInt);
-				pixel.color = new Color(Display.getCurrent(), rgb);
 
-				// Take care of transparency types
-				if (imageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL
-						&& imageData.transparentPixel == paletteInt) {
-					pixel.alpha = 0;
-				} else {
-					// getAlpha return the correct value or if there is not
-					// alphaData it returns 255
-					pixel.alpha = imageData.getAlpha(x, y);
-				}
-
-				pixel.realPosition = new Point(x, y);
-				pixels.add(pixel);
-			}
-		}
-	}
 
 	@Override
 	public boolean isDirty() {

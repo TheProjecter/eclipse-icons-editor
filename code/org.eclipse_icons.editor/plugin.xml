@@ -131,7 +131,6 @@
             </with>
          </activeWhen>
       </handler>
-      <!--
       <handler
             class="org.eclipse_icons.editor.CopyCommandHandler"
             commandId="org.eclipse.ui.edit.copy">
@@ -143,6 +142,22 @@
                </equals>
             </with>
          </activeWhen>
+         <enabledWhen>
+            <and>
+               <with
+                     variable="activeEditorId">
+                  <equals
+                        value="org.eclipse_icons.editor.iconEditor">
+                  </equals>
+               </with>
+               <with
+                     variable="activeEditor">
+                  <test
+                        property="org.eclipse_icons.editor.propertyTester.hasSelection">
+                  </test>
+               </with>
+            </and>
+         </enabledWhen>
       </handler>
       <handler
             class="org.eclipse_icons.editor.PasteCommandHandler"
@@ -168,7 +183,6 @@
             </with>
          </activeWhen>
       </handler>
-      -->
    </extension>
    <extension
          point="org.eclipse.core.expressions.propertyTesters">

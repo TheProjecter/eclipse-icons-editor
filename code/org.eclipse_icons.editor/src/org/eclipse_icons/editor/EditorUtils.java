@@ -4,10 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.ImageTransfer;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
@@ -657,4 +661,105 @@ public class EditorUtils {
 		}
 		return clonedPixels;
 	}
+
+	/**
+	 * Copy selection to clipboard
+	 */
+	public void copy() {
+		if (editor.selected){
+			// Create an imageData from selection
+			ImageData imageData = createImageData(editor.selectionRectangle.width, editor.selectionRectangle.height, editor.selectedPixels);
+
+			// Copy it to clipboard
+			final Display current = Display.getCurrent();
+			final Clipboard clipboard = new Clipboard(current);
+
+			final ImageTransfer imageTransfer = ImageTransfer.getInstance();
+			
+			clipboard.setContents(new Object[] { imageData },
+					new Transfer[] { imageTransfer });
+		}
+	}
+	
+	/**
+	 * Create an imageData from a set of pixel items
+	 * @param width
+	 * @param height
+	 * @param pixels
+	 * @return imageData
+	 */
+	public ImageData createImageData(int width, int height, List<PixelItem> pixels){
+		PaletteData paletteData = new PaletteData(0xff, 0xff00, 0xff0000);
+		ImageData imageData = new ImageData(width, height, 24, paletteData);
+		byte[] alphaData = new byte[width * height];
+		
+		for (int y = 0; y < height; y++){
+			for (int x = 0; x < width; x++){
+				int arrayPosition = x + width*y;
+				PixelItem pixelItem = pixels.get(arrayPosition);
+				RGB rgb = pixelItem.color.getRGB();
+				int pixelValue = imageData.palette.getPixel(rgb);
+				imageData.setPixel(x, y, pixelValue);
+				int alpha = pixelItem.alpha;
+				alphaData[arrayPosition] = (byte)alpha;
+				// imageData.setAlpha(x, y, alpha);
+			}
+		}
+		imageData.alphaData = alphaData;
+		return imageData;
+	}
+
+	/**
+	 * Paste
+	 */
+	public void paste() {
+		final Display current = Display.getCurrent();
+		final Clipboard clipboard = new Clipboard(current);
+		final ImageTransfer imageTransfer = ImageTransfer.getInstance();
+		Object object = clipboard.getContents(imageTransfer);
+		if (object != null && object instanceof ImageData){
+			ImageData pasteImageData = (ImageData)object;
+			// Create selection with this imageData
+			List<PixelItem> pasted = initializePixels(pasteImageData);
+			editor.selectToolItem(editor.selectToolItem);
+			editor.selected = true;
+			editor.selectedAndMoved = true;
+			editor.selectedPixels = pasted;
+			editor.selectionRectangle = new Rectangle(0, 0, pasteImageData.width, pasteImageData.height);
+			editor.zoomUtils.updateSelectedPixelsPositions();
+			editor.canvas.redraw();
+		}
+	}
+	
+	/**
+	 * initialize Pixels information with imageData information
+	 * 
+	 * @param imageData
+	 */
+	public static List<PixelItem> initializePixels(ImageData imageData) {
+		List<PixelItem> pixels = new ArrayList<PixelItem>();
+		for (int y = 0; y < imageData.height; y++) {
+			for (int x = 0; x < imageData.width; x++) {
+				PixelItem pixel = new PixelItem();
+				int paletteInt = imageData.getPixel(x, y);
+				RGB rgb = imageData.palette.getRGB(paletteInt);
+				pixel.color = new Color(Display.getCurrent(), rgb);
+
+				// Take care of transparency types
+				if (imageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL
+						&& imageData.transparentPixel == paletteInt) {
+					pixel.alpha = 0;
+				} else {
+					// getAlpha return the correct value or if there is not
+					// alphaData it returns 255
+					pixel.alpha = imageData.getAlpha(x, y);
+				}
+				pixel.realPosition = new Point(x, y);
+				pixels.add(pixel);
+			}
+		}
+		return pixels;
+	}
+
+	
 }
