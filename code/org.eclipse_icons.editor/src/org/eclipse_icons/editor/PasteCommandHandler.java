@@ -8,6 +8,10 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
 
+/**
+ * PasteCommandHandler
+ * @author Jabier Martinez
+ */
 public class PasteCommandHandler extends AbstractHandler {
 
 	@Override

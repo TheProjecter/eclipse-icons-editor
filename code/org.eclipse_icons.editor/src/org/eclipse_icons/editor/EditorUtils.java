@@ -761,5 +761,12 @@ public class EditorUtils {
 		return pixels;
 	}
 
+	/**
+	 * cut
+	 */
+	public void cut() {
+		copy();
+		delete(true);
+	}
 	
 }
