@@ -53,7 +53,7 @@
       <editor
             class="org.eclipse_icons.editor.IconsEditorPart"
             default="false"
-            extensions="png,PNG,gif,GIF,bmp,BMP"
+            extensions="png,PNG,gif,GIF,bmp,BMP,jpg,JPG,jpeg,JPEG"
             icon="icons/view.gif"
             id="org.eclipse_icons.editor.iconEditor"
             name="Icon Editor">
