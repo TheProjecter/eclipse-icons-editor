@@ -7,7 +7,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.dnd.ImageTransfer;
 import org.eclipse.swt.dnd.Transfer;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
@@ -507,7 +506,7 @@ public class EditorUtils {
 		PixelItem pixelItem = new PixelItem();
 		pixelItem.alpha = 255;
 		RGB rgb = editor.imageData.palette.getRGB(moreSimilarIndex);
-		pixelItem.color = new Color(Display.getCurrent(), rgb.red, rgb.green, rgb.red);
+		pixelItem.color = new RGB(rgb.red, rgb.green, rgb.red);
 		return pixelItem;
 	}
 	
@@ -519,7 +518,7 @@ public class EditorUtils {
 	public PixelItem getWhitePixelItem() {
 		PixelItem white = new PixelItem();
 		white.alpha = 255;
-		white.color = new Color(Display.getCurrent(), 255, 255, 255);
+		white.color = new RGB(255, 255, 255);
 		return white;
 	}
 
@@ -544,13 +543,13 @@ public class EditorUtils {
 					
 					double newAlpha = alphaA + (alphaB * (1.0-alphaA));
 					
-					double RA = a.color.getRed() / 255.0;
-					double GA = a.color.getGreen() / 255.0;
-					double BA = a.color.getBlue() / 255.0;
+					double RA = a.color.red / 255.0;
+					double GA = a.color.green / 255.0;
+					double BA = a.color.blue / 255.0;
 					
-					double RB = b.color.getRed() / 255.0;
-					double GB = b.color.getGreen() / 255.0;
-					double BB = b.color.getBlue() / 255.0;
+					double RB = b.color.red / 255.0;
+					double GB = b.color.green / 255.0;
+					double BB = b.color.blue / 255.0;
 
 					double newR = (RA * alphaA) + ((RB * alphaB) * (1.0-alphaA));
 					double newG = (GA * alphaA) + ((GB * alphaB) * (1.0-alphaA));
@@ -568,7 +567,7 @@ public class EditorUtils {
 					
 					PixelItem blendedPixelItem = new PixelItem();
 					blendedPixelItem.alpha = new Double(newAlpha * 255.0).intValue();
-					blendedPixelItem.color = new Color(Display.getDefault(), new Double(newR * 255.0).intValue(), new Double(newG * 255.0).intValue(), new Double(newB * 255.0).intValue());
+					blendedPixelItem.color = new RGB(new Double(newR * 255.0).intValue(), new Double(newG * 255.0).intValue(), new Double(newB * 255.0).intValue());
 					
 					// update data
 					paintPixel(blendedPixelItem, b);
@@ -697,7 +696,7 @@ public class EditorUtils {
 			for (int x = 0; x < width; x++){
 				int arrayPosition = x + width*y;
 				PixelItem pixelItem = pixels.get(arrayPosition);
-				RGB rgb = pixelItem.color.getRGB();
+				RGB rgb = pixelItem.color;
 				int pixelValue = imageData.palette.getPixel(rgb);
 				imageData.setPixel(x, y, pixelValue);
 				int alpha = pixelItem.alpha;
@@ -743,7 +742,7 @@ public class EditorUtils {
 				PixelItem pixel = new PixelItem();
 				int paletteInt = imageData.getPixel(x, y);
 				RGB rgb = imageData.palette.getRGB(paletteInt);
-				pixel.color = new Color(Display.getCurrent(), rgb);
+				pixel.color = rgb;
 
 				// Take care of transparency types
 				if (imageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL

@@ -14,13 +14,13 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTError;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -206,7 +206,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		}
 		currentColorToolItem
 				.setImage(EditorUtils.createImageForColorSelection(
-						colorPickerSelection.color.getRGB(),
+						colorPickerSelection.color,
 						colorPickerSelection.alpha));
 
 		new ToolItem(toolBar, SWT.SEPARATOR);
@@ -348,9 +348,15 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				GC gc;
 				Image bufferImage = null;
 				if (!nativelyDoubleBufferedCanvas) {
-					bufferImage = new Image(Display.getCurrent(), canvas
+					try{
+						bufferImage = new Image(Display.getCurrent(), canvas
 							.getBounds().width, canvas.getBounds().height);
-					gc = new GC(bufferImage);
+						gc = new GC(bufferImage);
+					} catch (SWTError noMoreHandlesError){
+						// No more handles error with big images
+						bufferImage = null;
+						gc = e.gc;
+					}
 				} else {
 					gc = e.gc;
 				}
@@ -437,7 +443,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 						gc.drawRectangle(translatedToCanvas);
 					}
 				}
-				if (!nativelyDoubleBufferedCanvas) {
+				if (!nativelyDoubleBufferedCanvas && bufferImage!=null) {
 					e.gc.drawImage(bufferImage, 0, 0);
 					bufferImage.dispose();
 				}
@@ -514,12 +520,11 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 				if (selectedColor != null) {
 					// Update selectedPixel
-					colorPickerSelection.color = new Color(
-							Display.getCurrent(), selectedColor);
+					colorPickerSelection.color = selectedColor;
 					colorPickerSelection.alpha = 255; // opaque
 					currentColorToolItem.setImage(EditorUtils
 							.createImageForColorSelection(
-									colorPickerSelection.color.getRGB(),
+									colorPickerSelection.color,
 									colorPickerSelection.alpha));
 				}
 
@@ -665,7 +670,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 			}
 
 			// Save colors
-			RGB color = pixelItem.color.getRGB();
+			RGB color = pixelItem.color;
 
 			// The image has a non-direct color model
 			if (!newImageData.palette.isDirect) {
@@ -708,7 +713,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		for (int index = 0; index < newImageData.getRGBs().length; index++) {
 			boolean found = false;
 			for (PixelItem pixelItem : pixels) {
-				if (pixelItem.color.getRGB().equals(
+				if (pixelItem.color.equals(
 						newImageData.getRGBs()[index])) {
 					found = true;
 					break;
@@ -864,7 +869,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 						selectToolItem(paintToolItem);
 						currentColorToolItem.setImage(EditorUtils
 								.createImageForColorSelection(
-										colorPickerSelection.color.getRGB(),
+										colorPickerSelection.color,
 										colorPickerSelection.alpha));
 					}
 				}
@@ -1038,10 +1043,14 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		}
 		imageData = null;
 		
-		undoStack.clear();
-		undoStack = null;
-		redoStack.clear();
-		redoStack = null;
+		if (undoStack!=null){
+			undoStack.clear();
+			undoStack = null;
+		}
+		if (redoStack!=null){
+			redoStack.clear();
+			redoStack = null;
+		}
 		if (previousNonDirty !=null){
 			previousNonDirty.clear();
 			previousNonDirty = null;

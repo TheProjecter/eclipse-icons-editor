@@ -3,7 +3,9 @@ package org.eclipse_icons.editor;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Display;
 
 /**
  * Pixel item class to be shown in the canvas and also used to save the
@@ -13,7 +15,7 @@ import org.eclipse.swt.graphics.Rectangle;
 public class PixelItem implements Cloneable {
 	
 	// Color
-	public Color color;
+	public RGB color;
 	
 	// 0 transparent, 255 opaque
 	public int alpha;
@@ -30,9 +32,11 @@ public class PixelItem implements Cloneable {
 	 */
 	public void paint(GC gc) {
 		gc.setAlpha(alpha);
-		gc.setBackground(color);
+		Color backgroundColor = new Color(Display.getCurrent(),color);
+		gc.setBackground(backgroundColor);
 		gc.fillRectangle(pixelRectangle.x, pixelRectangle.y,
 				pixelRectangle.width, pixelRectangle.height);
+		backgroundColor.dispose();
 	}
 
 	/**
@@ -66,7 +70,7 @@ public class PixelItem implements Cloneable {
 			_toString = "[" + realPosition.x + "," + realPosition.y + "]";
 		}
 		if (color != null){
-			_toString = _toString + " color=" + color.getRGB() + " alpha=" + alpha;
+			_toString = _toString + " color=" + color + " alpha=" + alpha;
 		}
 		return _toString;
 	}
