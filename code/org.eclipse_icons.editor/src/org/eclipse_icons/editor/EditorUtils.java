@@ -600,7 +600,8 @@ public class EditorUtils {
 			
 			// update
 			editor.pixels = toUpdate;
-			editor.canvas.redraw();
+			// apply zoom to adapt to current size and redraw
+			editor.zoomUtils.applyZoom(editor.pixelLength);
 		}
 	}
 
@@ -627,7 +628,8 @@ public class EditorUtils {
 			
 			// update
 			editor.pixels = toUpdate;
-			editor.canvas.redraw();
+			// apply zoom to adapt to current size and redraw
+			editor.zoomUtils.applyZoom(editor.pixelLength);
 		}
 	}
 
