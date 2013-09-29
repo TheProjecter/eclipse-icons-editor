@@ -260,10 +260,12 @@ public class Utils {
 				if (imageData.palette.getRGBs()[i].equals(rgb)){
 					// Same color found
 					if (imageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL){
-						// And it is not the transparency pixel position
+						// And it is not the transparency pixel position in the case of transparency pixel image
 						if (imageData.transparentPixel != i){
 							return i;
 						}
+					} else {
+						return i;
 					}
 				}
 			}

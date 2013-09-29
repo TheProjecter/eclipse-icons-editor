@@ -104,13 +104,13 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	protected ZoomUtils zoomUtils;
 
 	public boolean nativelyDoubleBufferedCanvas = false;
-	
+
 	// Undo/Redo stacks
 	// TODO Management of dirty state with undo/redo
 	public Stack<List<PixelItem>> undoStack;
 	public Stack<List<PixelItem>> redoStack;
 	public List<PixelItem> previousNonDirty = null;
-	
+
 	@Override
 	public void init(IEditorSite site, IEditorInput input)
 			throws PartInitException {
@@ -143,7 +143,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		iconWidth = imageData.width;
 		iconHeight = imageData.height;
 		pixels = EditorUtils.initializePixels(imageData);
-		
+
 		// Undo redo stacks
 		undoStack = new Stack<List<PixelItem>>();
 		redoStack = new Stack<List<PixelItem>>();
@@ -167,7 +167,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 		// Remove selection rectangle if it exists
 		if (selected) {
-			if (selectedAndMoved){
+			if (selectedAndMoved) {
 				editorUtils.blendSelection();
 			}
 			deactivateSelection();
@@ -204,10 +204,8 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		if (colorPickerSelection == null) {
 			colorPickerSelection = (PixelItem) pixels.get(0).clone();
 		}
-		currentColorToolItem
-				.setImage(EditorUtils.createImageForColorSelection(
-						colorPickerSelection.color,
-						colorPickerSelection.alpha));
+		currentColorToolItem.setImage(EditorUtils.createImageForColorSelection(
+				colorPickerSelection.color, colorPickerSelection.alpha));
 
 		new ToolItem(toolBar, SWT.SEPARATOR);
 
@@ -315,11 +313,11 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 							|| e.keyCode == SWT.ARROW_DOWN
 							|| e.keyCode == SWT.ARROW_UP) {
 						// moved for the first time
-						if (!selectedAndMoved){
-							
+						if (!selectedAndMoved) {
+
 							// Save previous in undoStack
 							editorUtils.storeInUndoStack();
-							
+
 							editorUtils.delete(false);
 							selectedAndMoved = true;
 						}
@@ -348,11 +346,11 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				GC gc;
 				Image bufferImage = null;
 				if (!nativelyDoubleBufferedCanvas) {
-					try{
+					try {
 						bufferImage = new Image(Display.getCurrent(), canvas
-							.getBounds().width, canvas.getBounds().height);
+								.getBounds().width, canvas.getBounds().height);
 						gc = new GC(bufferImage);
-					} catch (SWTError noMoreHandlesError){
+					} catch (SWTError noMoreHandlesError) {
 						// No more handles error with big images
 						bufferImage = null;
 						gc = e.gc;
@@ -420,11 +418,13 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					}
 					// Selection done. Paint selectionRectangle
 					if (selected) {
-						// Paint selection on top of everything to allow moving it
+						// Paint selection on top of everything to allow moving
+						// it
 						// paint pixels
-						if (selectedAndMoved){							
+						if (selectedAndMoved) {
 							// Show moved
-							for (Iterator<PixelItem> i = selectedPixels.iterator(); i.hasNext();) {
+							for (Iterator<PixelItem> i = selectedPixels
+									.iterator(); i.hasNext();) {
 								PixelItem pixel = (PixelItem) i.next();
 								// paint the pixel itself
 								pixel.paint(gc);
@@ -443,7 +443,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 						gc.drawRectangle(translatedToCanvas);
 					}
 				}
-				if (!nativelyDoubleBufferedCanvas && bufferImage!=null) {
+				if (!nativelyDoubleBufferedCanvas && bufferImage != null) {
 					e.gc.drawImage(bufferImage, 0, 0);
 					bufferImage.dispose();
 				}
@@ -480,7 +480,8 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				} else {
 					// Indirect palette
 					// Is there a non used position in the palette?
-					int palettePosition = getAvailablePalettePosition(imageData);
+					int palettePosition = editorUtils
+							.getAvailablePalettePosition(imageData);
 					// No position... not supported yet.
 					if (palettePosition == -1) {
 						// Error image
@@ -608,7 +609,8 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 						&& UIUtils.isTransparentImageFile(input.getFile())
 						&& !imageData.palette.isDirect) {
 					// check if there is position
-					int transparentPixel = getAvailablePalettePosition(imageData);
+					int transparentPixel = editorUtils
+							.getAvailablePalettePosition(imageData);
 					// not found space in the palette for the transparent
 					// pixel...
 					if (transparentPixel == -1) {
@@ -639,15 +641,17 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	 * @param monitor
 	 */
 	public void performSave(String fileAbsPath, IProgressMonitor monitor) {
-		
+
+		boolean errorSaving = false;
+
 		// First blend the selection if active
-		if (selected){
-			if (selectedAndMoved){
+		if (selected) {
+			if (selectedAndMoved) {
 				editorUtils.blendSelection();
 			}
 			deactivateSelection();
 		}
-		
+
 		monitor.beginTask("Save", 1);
 
 		// Start the process
@@ -679,13 +683,23 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 				if ((newImageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL && pixelItem.alpha != 0)
 						|| newImageData.getTransparencyType() != SWT.TRANSPARENCY_PIXEL) {
 					// Get the index of the color in the palette
-					for (int i = 0; i < newImageData.getRGBs().length; i++) {
-						if (newImageData.getRGBs()[i].equals(color)) {
-							// Save the new index
+					int position = Utils.getRGBPositionInPalette(newImageData,
+							color);
+					if (position == -1) {
+						// not found!
+						int availablePositionIndex = editorUtils
+								.getAvailablePalettePosition(newImageData);
+						if (availablePositionIndex != -1) {
+							newImageData.getRGBs()[availablePositionIndex] = pixelItem.color;
 							newImageData.setPixel(pixelItem.realPosition.x,
-									pixelItem.realPosition.y, i);
-							break;
+									pixelItem.realPosition.y,
+									availablePositionIndex);
+						} else {
+							errorSaving = true;
 						}
+					} else {
+						newImageData.setPixel(pixelItem.realPosition.x,
+								pixelItem.realPosition.y, position);
 					}
 				}
 			} else {
@@ -697,38 +711,26 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		}
 
 		// Save it
-		int imageFormat = Utils.getImageFormat(imageData, input.getFile()
-				.getFileExtension());
-		Utils.saveIconToFile(newImageData, fileAbsPath, imageFormat);
+		if (!errorSaving) {
+			int imageFormat = Utils.getImageFormat(imageData, input.getFile()
+					.getFileExtension());
+			Utils.saveIconToFile(newImageData, fileAbsPath, imageFormat);
 
-		monitor.worked(1);
-		monitor.done();
+			monitor.worked(1);
+			monitor.done();
 
-		// refresh workspace
-		UIUtils.refreshWorkspace(fileAbsPath);
-	}
-
-	private int getAvailablePalettePosition(ImageData newImageData) {
-		// Loop through palette
-		for (int index = 0; index < newImageData.getRGBs().length; index++) {
-			boolean found = false;
-			for (PixelItem pixelItem : pixels) {
-				if (pixelItem.color.equals(
-						newImageData.getRGBs()[index])) {
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				return index;
-			}
+			// refresh workspace
+			UIUtils.refreshWorkspace(fileAbsPath);
+		} else {
+			MessageDialog
+					.openError(Display.getDefault().getActiveShell(), "Error",
+							"Error while saving. No available positions on image palette.");
 		}
-		return -1;
 	}
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {
-		
+
 		String absPath = input.getFile().getLocation().toOSString();
 		if (UIUtils.checkIfWritable(absPath)) {
 			performSave(absPath, monitor);
@@ -740,7 +742,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 	@Override
 	public void doSaveAs() {
-		
+
 		SaveAsContainerSelectionDialog dialog = new SaveAsContainerSelectionDialog(
 				Display.getCurrent().getActiveShell(), ResourcesPlugin
 						.getWorkspace().getRoot(), false,
@@ -758,8 +760,6 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 			}
 		}
 	}
-
-
 
 	@Override
 	public boolean isDirty() {
@@ -785,10 +785,10 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					// Erase
 					if (eraseToolItem.getSelection()) {
 						drawing = true;
-						
+
 						// Save previous in undoStack
 						editorUtils.storeInUndoStack();
-						
+
 						boolean modified = EditorUtils
 								.paintTransparentPixel(selectedPixel);
 						if (modified) {
@@ -798,10 +798,10 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					// Paint
 					else if (paintToolItem.getSelection()) {
 						drawing = true;
-						
+
 						// Save previous in undoStack
 						editorUtils.storeInUndoStack();
-						
+
 						boolean modified = editorUtils.paintPixel(
 								colorPickerSelection, selectedPixel);
 						if (modified) {
@@ -820,40 +820,41 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					else if (selectToolItem.getSelection()) {
 
 						// Another selection was started?
-						if (selected){
+						if (selected) {
 							// Check if it clicked inside the selection
 							boolean clickedInsideSelection = false;
-							for (PixelItem pixelItem : selectedPixels){
-								if(selectedPixel.pixelRectangle.intersects(pixelItem.pixelRectangle)){
+							for (PixelItem pixelItem : selectedPixels) {
+								if (selectedPixel.pixelRectangle
+										.intersects(pixelItem.pixelRectangle)) {
 									clickedInsideSelection = true;
 									break;
 								}
 							}
 							// If not clicked inside blend and remove
-							if (!clickedInsideSelection){
-								if (selectedAndMoved){
+							if (!clickedInsideSelection) {
+								if (selectedAndMoved) {
 									editorUtils.blendSelection();
 								}
 								deactivateSelection();
 							} else {
 								// If clicked inside selection allows to move it
 								// TODO Only arrows supported for the moment
-								MessageDialog.openInformation(Display.getDefault()
-										.getActiveShell(), "Info",
+								MessageDialog.openInformation(Display
+										.getDefault().getActiveShell(), "Info",
 										"Use arrows to move the selection.");
 							}
 						}
-						
+
 						paintRectangle = new Rectangle(e.x, e.y, 2, 2);
 						canvas.redraw();
 					}
 					// Fill
 					else if (fillToolItem.getSelection()) {
 						drawing = false;
-						
+
 						// Save previous in undoStack
 						editorUtils.storeInUndoStack();
-						
+
 						boolean modified = editorUtils.fillPixels(
 								(PixelItem) selectedPixel.clone(),
 								selectedPixel);
@@ -928,24 +929,24 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		canvas.addListener(SWT.MouseUp, new Listener() {
 			public void handleEvent(Event e) {
 				if (drawing) {
-					
+
 					// UnfilledRectangle
 					if (unfilledRectangleToolItem.getSelection()) {
-						
+
 						// Save previous in undoStack
 						editorUtils.storeInUndoStack();
-						
+
 						editorUtils.paintUnfilledRectangle();
 						paintRectangle = null;
 						canvas.redraw();
 					}
-					
+
 					// FilledRectangle
 					if (filledRectangleToolItem.getSelection()) {
-						
+
 						// Save previous in undoStack
 						editorUtils.storeInUndoStack();
-						
+
 						editorUtils.paintFilledRectangle();
 						paintRectangle = null;
 						canvas.redraw();
@@ -960,15 +961,17 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					selected = true;
 					selectedAndMoved = false;
 					PixelItem topLeft = (PixelItem) editorUtils
-							.getRectangleTopLeftPixelItem(paintRectangle).clone();
+							.getRectangleTopLeftPixelItem(paintRectangle)
+							.clone();
 					PixelItem bottomRight = (PixelItem) editorUtils
-							.getRectangleBottomRightPixelItem(paintRectangle).clone();
+							.getRectangleBottomRightPixelItem(paintRectangle)
+							.clone();
 					selectionRectangle = new Rectangle(topLeft.realPosition.x,
 							topLeft.realPosition.y, bottomRight.realPosition.x
 									- topLeft.realPosition.x + 1,
 							bottomRight.realPosition.y - topLeft.realPosition.y
 									+ 1);
-					
+
 					// Create selectedPixels
 					selectedPixels = new ArrayList<PixelItem>();
 					for (int y = topLeft.realPosition.y; y <= bottomRight.realPosition.y; y++) {
@@ -992,6 +995,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 	/**
 	 * notify pixel modification
+	 * 
 	 * @param pixel
 	 */
 	protected void notifyPixelModification(PixelItem pixel) {
@@ -1008,6 +1012,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 	/**
 	 * Create canvas
+	 * 
 	 * @param parent
 	 * @param paintListener
 	 * @return the canvas
@@ -1018,11 +1023,10 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 		if (pl != null) {
 			c.addPaintListener(pl);
 		}
-		c.setCursor(new Cursor(Display.getCurrent(),SWT.CURSOR_CROSS));
+		c.setCursor(new Cursor(Display.getCurrent(), SWT.CURSOR_CROSS));
 		return c;
 	}
 
-	
 	/**
 	 * Overriding Dispose to dispose our elements
 	 */
@@ -1033,25 +1037,25 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 			canvas.dispose();
 		}
 		super.dispose();
-		if (pixels!=null){
+		if (pixels != null) {
 			pixels.clear();
 			pixels = null;
 		}
-		if (selectedPixels!=null){
+		if (selectedPixels != null) {
 			selectedPixels.clear();
 			selectedPixels = null;
 		}
 		imageData = null;
-		
-		if (undoStack!=null){
+
+		if (undoStack != null) {
 			undoStack.clear();
 			undoStack = null;
 		}
-		if (redoStack!=null){
+		if (redoStack != null) {
 			redoStack.clear();
 			redoStack = null;
 		}
-		if (previousNonDirty !=null){
+		if (previousNonDirty != null) {
 			previousNonDirty.clear();
 			previousNonDirty = null;
 		}
