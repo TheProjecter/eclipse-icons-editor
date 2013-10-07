@@ -25,6 +25,7 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
@@ -86,6 +87,8 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 	protected Boolean drawing = false;
 	protected Boolean selected = false;
 	protected Boolean selectedAndMoved = false;
+	protected Boolean mouseMoving = false;
+	protected Point mousePoint = new Point(0,0);
 
 	// States
 	protected ToolItem currentColorToolItem;
@@ -493,12 +496,12 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 						selectToolItem(colorPickerToolItem);
 
-						// Image palette
-						// PaletteDialog dialog = new
-						// PaletteDialog(Display.getCurrent().getActiveShell());
-						// dialog.setPalette(imageData.palette);
-						// dialog.setText("Info window, current image palette.");
-						// dialog.open();
+//						 // Image palette
+//						 PaletteDialog dialog = new
+//						 PaletteDialog(Display.getCurrent().getActiveShell());
+//						 dialog.setPalette(imageData.palette);
+//						 dialog.setText("Info window, current image palette.");
+//						 dialog.open();
 					} else {
 						// The user selects a color
 						ColorDialog colorDialog = new ColorDialog(Display
@@ -838,10 +841,9 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 								deactivateSelection();
 							} else {
 								// If clicked inside selection allows to move it
-								// TODO Only arrows supported for the moment
-								MessageDialog.openInformation(Display
-										.getDefault().getActiveShell(), "Info",
-										"Use arrows to move the selection.");
+								mouseMoving = true;
+								mousePoint.x = e.x;
+								mousePoint.y = e.y;
 							}
 						}
 
@@ -911,7 +913,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 					}
 				}
 				// Select
-				else if (selectToolItem.getSelection()) {
+				else if (!mouseMoving && selectToolItem.getSelection()) {
 					if (paintRectangle != null) {
 						PixelItem selectedPixel = editorUtils.getCanvasPixel(
 								e.x, e.y);
@@ -920,6 +922,41 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 							paintRectangle.height = e.y - paintRectangle.y;
 							canvas.redraw();
 						}
+					}
+				}
+				if (selected && mouseMoving){
+					int xDis = e.x - mousePoint.x;
+					int yDis = e.y - mousePoint.y;
+					if (Math.abs(xDis)>=pixelLength || Math.abs(yDis)>=pixelLength){
+					int xPos = ((e.x - mousePoint.x) / pixelLength);
+					int yPos = ((e.y - mousePoint.y) / pixelLength);
+
+						mousePoint.x = e.x;
+						mousePoint.y = e.y;
+						int xDir = SWT.ARROW_LEFT;
+						if (xPos>0) {
+							xDir = SWT.ARROW_RIGHT;
+						}
+						int yDir = SWT.ARROW_UP;
+						if (yPos>0){
+							yDir = SWT.ARROW_DOWN;
+						}
+					// moved for the first time
+					if (!selectedAndMoved) {
+
+						// Save previous in undoStack
+						editorUtils.storeInUndoStack();
+
+						editorUtils.delete(false);
+						selectedAndMoved = true;
+					}
+					for (int x=0; x<Math.abs(xPos); x++){
+						editorUtils.moveSelectedPixels(xDir);
+					}
+					for (int x=0; x<Math.abs(yPos); x++){
+						editorUtils.moveSelectedPixels(yDir);
+					}
+					canvas.redraw();
 					}
 				}
 			}
@@ -956,7 +993,7 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 
 				// TODO Problems when selection starts ok but ends outside the
 				// canvas
-				if (selectToolItem.getSelection() && paintRectangle != null) {
+				if (!mouseMoving && selectToolItem.getSelection() && paintRectangle != null) {
 					// Create selectionRectangle
 					selected = true;
 					selectedAndMoved = false;
@@ -984,7 +1021,8 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 						}
 					}
 					canvas.redraw();
-				}
+				}				
+				mouseMoving = false;
 			}
 		});
 	}

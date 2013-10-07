@@ -790,10 +790,13 @@ public class EditorUtils {
 			editor.selectionRectangle = new Rectangle(0, 0, pastedWidth,
 					pastedHeight);
 			// force focus to be able to get key listener
-			editor.canvas.setFocus();		
-			// with this we force redraw and updatePixelsPositions and updateSelectedPixelPositions
-			// and we avoid the painting outside the boundaries issue when moving selection in different image
-			editor.zoomUtils.applyZoom(editor.zoomUtils.zoomScale.getSelection());
+			editor.canvas.setFocus();
+			// with this we force redraw and updatePixelsPositions and
+			// updateSelectedPixelPositions
+			// and we avoid the painting outside the boundaries issue when
+			// moving selection in different image
+			editor.zoomUtils.applyZoom(editor.zoomUtils.zoomScale
+					.getSelection());
 		}
 	}
 
@@ -834,8 +837,11 @@ public class EditorUtils {
 		copy();
 		delete(true);
 	}
-	
+
 	/**
+	 * TODO this code could be optimized to refactor imageData. Now if palette
+	 * has the same color repeated and editor has this color it consider both as
+	 * used
 	 * 
 	 * @param newImageData
 	 * @return
@@ -844,16 +850,15 @@ public class EditorUtils {
 		// Loop through palette
 		for (int index = 0; index < newImageData.getRGBs().length; index++) {
 			// We lock Transparent pixel
-			if (newImageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL){
-				if (newImageData.transparentPixel==index){
-					break;
+			if (newImageData.getTransparencyType() == SWT.TRANSPARENCY_PIXEL) {
+				if (newImageData.transparentPixel == index) {
+					continue;
 				}
 			}
 			// Loop through pixels
 			boolean found = false;
 			for (PixelItem pixelItem : editor.pixels) {
-				if (pixelItem.color.equals(
-						newImageData.getRGBs()[index])) {
+				if (pixelItem.color.equals(newImageData.getRGBs()[index])) {
 					found = true;
 					break;
 				}
