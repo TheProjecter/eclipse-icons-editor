@@ -123,6 +123,17 @@ public class ZoomUtils {
 				applyZoom(editor.pixelLength - 10);
 			}
 		});
+		
+		ToolItem zoomFit = new ToolItem(toolBar, SWT.PUSH);
+		zoomFit.setToolTipText("Fit to screen");
+		zoomFit.setImage(Activator.getImageDescriptor(
+				"icons/editor/zoomFit.png").createImage());
+		zoomFit.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				int newZoom = getFitToScreenZoom();
+				applyZoom(newZoom);
+			}
+		});
 	}
 
 	/**
@@ -150,4 +161,19 @@ public class ZoomUtils {
 		zoomScale.setLayoutData(gridData);
 		return zoomScale;
 	}
+	
+	/**
+	 * Get fit to screen zoom level
+	 */
+	public int getFitToScreenZoom() {
+		int compositeWidth = editor.canvas.getParent().getClientArea().width;
+		int zoomWidth = compositeWidth / editor.iconWidth;
+		
+		int compositeHeight = editor.canvas.getParent().getClientArea().height;
+		compositeHeight = compositeHeight - zoomScale.getBounds().height - 10;
+		int zoomHeight = compositeHeight / editor.iconHeight;
+		
+		return Math.max(1, Math.min(zoomWidth, zoomHeight));
+	}
+
 }
