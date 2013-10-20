@@ -36,11 +36,13 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorSite;
+import org.eclipse.ui.IPropertyListener;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.EditorPart;
 import org.eclipse.ui.part.FileEditorInput;
@@ -299,8 +301,10 @@ public class IconsEditorPart extends EditorPart {
 		// Mouse listeners to draw
 		createCanvasMouseListeners();
 
+		// Keyboard listeners
 		createCanvasKeyboardListeners();
 
+		// Force applyZoom to initialize pixel items
 		zoomUtils.applyZoom(ZoomUtils.ZOOM_INITIAL);
 	}
 
@@ -1048,12 +1052,60 @@ public class IconsEditorPart extends EditorPart {
 	 * @return the canvas
 	 */
 	protected Canvas createCanvas(Composite parent, PaintListener pl) {
-		Canvas c = new Canvas(parent, SWT.NO_BACKGROUND);
+		final Composite sc = new Composite(parent, SWT.V_SCROLL | SWT.H_SCROLL);
+		sc.setLayoutData(new GridData(GridData.FILL,
+				GridData.FILL, true, true, 2, 1));
+		final Canvas c = new Canvas(sc, SWT.NO_BACKGROUND);
 		nativelyDoubleBufferedCanvas = ((c.getStyle() & SWT.DOUBLE_BUFFERED) != 0);
 		if (pl != null) {
 			c.addPaintListener(pl);
 		}
+		
+		// Cursor for editing
 		c.setCursor(new Cursor(Display.getCurrent(), SWT.CURSOR_CROSS));
+
+		// Scrolling code
+		final ScrollBar hBar = sc.getHorizontalBar ();
+		hBar.addListener (SWT.Selection, new Listener () {
+			public void handleEvent (Event e) {
+				Point location = c.getLocation ();
+				location.x = -hBar.getSelection ();
+				c.setLocation (location);
+			}
+		});
+		final ScrollBar vBar = sc.getVerticalBar ();
+		vBar.addListener (SWT.Selection, new Listener () {
+			public void handleEvent (Event e) {
+				Point location = c.getLocation ();
+				location.y = -vBar.getSelection ();
+				c.setLocation (location);
+			}
+		});
+		sc.addListener (SWT.Resize,  new Listener () {
+			public void handleEvent (Event e) {
+				Point size = c.getSize ();
+				Rectangle rect = sc.getClientArea ();
+				hBar.setMaximum (size.x);
+				vBar.setMaximum (size.y);
+				hBar.setThumb (Math.min (size.x, rect.width));
+				vBar.setThumb (Math.min (size.y, rect.height));
+				int hPage = size.x - rect.width;
+				int vPage = size.y - rect.height;
+				int hSelection = hBar.getSelection ();
+				int vSelection = vBar.getSelection ();
+				Point location = c.getLocation ();
+				if (hSelection >= hPage) {
+					if (hPage <= 0) hSelection = 0;
+					location.x = -hSelection;
+				}
+				if (vSelection >= vPage) {
+					if (vPage <= 0) vSelection = 0;
+					location.y = -vSelection;
+				}
+				c.setLocation (location);
+			}
+		});
+		
 		return c;
 	}
 

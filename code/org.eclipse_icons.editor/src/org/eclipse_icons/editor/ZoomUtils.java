@@ -87,6 +87,9 @@ public class ZoomUtils {
 		zoomScale.setSelection(editor.pixelLength);
 		editor.canvas.setBounds(editor.canvas.getBounds().x, editor.canvas.getBounds().y, editor.pixelLength * editor.iconWidth + 1, editor.pixelLength * editor.iconHeight + 1);
 		editor.canvas.redraw();
+		// Notify scrolls by sending a resize event
+		editor.canvas.getParent().notifyListeners(SWT.Resize, null);
+		editor.canvas.getParent().notifyListeners(SWT.Resize, null);
 	}
 
 	/**
@@ -170,7 +173,6 @@ public class ZoomUtils {
 		int zoomWidth = compositeWidth / editor.iconWidth;
 		
 		int compositeHeight = editor.canvas.getParent().getClientArea().height;
-		compositeHeight = compositeHeight - zoomScale.getBounds().height - 10;
 		int zoomHeight = compositeHeight / editor.iconHeight;
 		
 		return Math.max(1, Math.min(zoomWidth, zoomHeight));
