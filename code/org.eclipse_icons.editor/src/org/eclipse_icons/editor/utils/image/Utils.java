@@ -54,6 +54,7 @@ public class Utils {
 		loader.save(imagePath, format);
 	}
 
+	// TODO for the moment only png file is allowed for saving the image
 	public static String getExtension(int outputFormat) {
 		if (outputFormat == SWT.IMAGE_PNG) {
 			return "png";

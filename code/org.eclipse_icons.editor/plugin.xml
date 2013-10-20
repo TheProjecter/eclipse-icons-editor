@@ -52,11 +52,14 @@
          point="org.eclipse.ui.editors">
       <editor
             class="org.eclipse_icons.editor.IconsEditorPart"
-            default="false"
+            default="true"
             extensions="png,PNG,gif,GIF,bmp,BMP,jpg,JPG,jpeg,JPEG"
             icon="icons/view.gif"
             id="org.eclipse_icons.editor.iconEditor"
             name="Icon Editor">
+         <contentTypeBinding
+               contentTypeId="org.eclipse_icons.editor.imageContentType">
+         </contentTypeBinding>
       </editor>
    </extension>
    <extension
@@ -193,6 +196,29 @@
             properties="hasSelection"
             type="org.eclipse_icons.editor.IconsEditorPart">
       </propertyTester>
+   </extension>
+   <extension
+         point="org.eclipse.ui.propertyPages">
+      <page
+            class="org.eclipse_icons.editor.properties.ImageResourcePropertyPage"
+            id="org.eclipse_icons.editor.properties.samplePropertyPage"
+            name="Image">
+         <enabledWhen>
+            <test
+                  property="org.eclipse.core.resources.contentTypeId"
+                  value="org.eclipse_icons.editor.imageContentType">
+            </test>
+         </enabledWhen>
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.core.contenttype.contentTypes">
+      <content-type
+            file-extensions="png,gif,bmp,jpg,jpeg"
+            id="org.eclipse_icons.editor.imageContentType"
+            name="Image"
+            priority="normal">
+      </content-type>
    </extension>
 
 </plugin>

@@ -41,7 +41,6 @@ import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorSite;
-import org.eclipse.ui.ISaveablePart;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.EditorPart;
 import org.eclipse.ui.part.FileEditorInput;
@@ -54,7 +53,7 @@ import org.eclipse_icons.editor.utils.ui.UIUtils;
  * 
  * @author Jabier Martinez
  */
-public class IconsEditorPart extends EditorPart implements ISaveablePart {
+public class IconsEditorPart extends EditorPart {
 
 	// Editor
 	public static final String ID = "org.eclipse_icons.editor.iconEditor";
@@ -495,13 +494,6 @@ public class IconsEditorPart extends EditorPart implements ISaveablePart {
 										"Sorry but all positions in the image palette are being used.\nPick a color from the image");
 
 						selectToolItem(colorPickerToolItem);
-
-//						 // Image palette
-//						 PaletteDialog dialog = new
-//						 PaletteDialog(Display.getCurrent().getActiveShell());
-//						 dialog.setPalette(imageData.palette);
-//						 dialog.setText("Info window, current image palette.");
-//						 dialog.open();
 					} else {
 						// The user selects a color
 						ColorDialog colorDialog = new ColorDialog(Display
