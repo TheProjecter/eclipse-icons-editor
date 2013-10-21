@@ -22,7 +22,6 @@ public class ZoomUtils {
 	// Zoom
 	public static final int ZOOM_MAXIMUM = 50;
 	public static final int ZOOM_MINIMUM = 1;
-	public static final int ZOOM_INITIAL = 20;
 	public Scale zoomScale = null;
 
 	private IconsEditorPart editor;
@@ -49,8 +48,9 @@ public class ZoomUtils {
 	}
 
 	/**
-	 * Update selected pixel positions based on new pixelLength
-	 * Remember that editor.selectionRectangle contains pixel size information (1,1) and not (pixelLength, pixelLength)
+	 * Update selected pixel positions based on new pixelLength Remember that
+	 * editor.selectionRectangle contains pixel size information (1,1) and not
+	 * (pixelLength, pixelLength)
 	 */
 	public void updateSelectedPixelsPositions() {
 		if (editor.selectionRectangle != null) {
@@ -60,7 +60,8 @@ public class ZoomUtils {
 				pixelItem.pixelRectangle = new Rectangle(x, y,
 						editor.pixelLength, editor.pixelLength);
 				x += editor.pixelLength;
-				if (x >= (editor.pixelLength * editor.selectionRectangle.width) + (editor.selectionRectangle.x * editor.pixelLength)) {
+				if (x >= (editor.pixelLength * editor.selectionRectangle.width)
+						+ (editor.selectionRectangle.x * editor.pixelLength)) {
 					x = editor.selectionRectangle.x * editor.pixelLength;
 					y += editor.pixelLength;
 				}
@@ -85,7 +86,10 @@ public class ZoomUtils {
 		updatePixelsPositions();
 		updateSelectedPixelsPositions();
 		zoomScale.setSelection(editor.pixelLength);
-		editor.canvas.setBounds(editor.canvas.getBounds().x, editor.canvas.getBounds().y, editor.pixelLength * editor.iconWidth + 1, editor.pixelLength * editor.iconHeight + 1);
+		editor.canvas.setBounds(editor.canvas.getBounds().x,
+				editor.canvas.getBounds().y, editor.pixelLength
+						* editor.iconWidth + 1, editor.pixelLength
+						* editor.iconHeight + 1);
 		editor.canvas.redraw();
 		// Notify scrolls by sending a resize event
 		editor.canvas.getParent().notifyListeners(SWT.Resize, null);
@@ -126,7 +130,7 @@ public class ZoomUtils {
 				applyZoom(editor.pixelLength - 10);
 			}
 		});
-		
+
 		ToolItem zoomFit = new ToolItem(toolBar, SWT.PUSH);
 		zoomFit.setToolTipText("Fit to screen");
 		zoomFit.setImage(Activator.getImageDescriptor(
@@ -150,13 +154,14 @@ public class ZoomUtils {
 		zoomScale.setToolTipText("Zoom");
 		zoomScale.setMinimum(ZOOM_MINIMUM);
 		zoomScale.setMaximum(ZOOM_MAXIMUM);
-		zoomScale.setSelection(ZOOM_INITIAL);
+		zoomScale.setSelection(getInitialZoom());
 		zoomScale.setIncrement(1);
 
 		zoomScale.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event event) {
 				applyZoom(zoomScale.getSelection());
-				// Put the focus in the canvas, otherwise scale will take control of arrows
+				// Put the focus in the canvas, otherwise scale will take
+				// control of arrows
 				editor.canvas.setFocus();
 			}
 		});
@@ -164,18 +169,32 @@ public class ZoomUtils {
 		zoomScale.setLayoutData(gridData);
 		return zoomScale;
 	}
-	
+
 	/**
 	 * Get fit to screen zoom level
 	 */
 	public int getFitToScreenZoom() {
 		int compositeWidth = editor.canvas.getParent().getClientArea().width;
 		int zoomWidth = compositeWidth / editor.iconWidth;
-		
+
 		int compositeHeight = editor.canvas.getParent().getClientArea().height;
 		int zoomHeight = compositeHeight / editor.iconHeight;
-		
+
 		return Math.max(1, Math.min(zoomWidth, zoomHeight));
+	}
+
+	// TODO Implement a better approach trying to get canvas size
+	public int getInitialZoom() {
+		int max = Math.max(editor.iconWidth, editor.iconWidth);
+		// normal icons 16x16
+		if (max <= 19) {
+			return 20;
+			// wizbans 75x66
+		} else if (max <= 80) {
+			return 5;
+		}
+		// big images
+		return 1;
 	}
 
 }

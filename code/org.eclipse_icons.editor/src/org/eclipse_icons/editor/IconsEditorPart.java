@@ -42,7 +42,6 @@ import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorSite;
-import org.eclipse.ui.IPropertyListener;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.EditorPart;
 import org.eclipse.ui.part.FileEditorInput;
@@ -101,7 +100,7 @@ public class IconsEditorPart extends EditorPart {
 	protected ToolItem fillToolItem;
 	protected ToolItem eraseToolItem;
 
-	protected int pixelLength = ZoomUtils.ZOOM_INITIAL;
+	protected int pixelLength = 1;
 
 	// Editor Utils
 	protected EditorUtils editorUtils;
@@ -147,6 +146,7 @@ public class IconsEditorPart extends EditorPart {
 		iconWidth = imageData.width;
 		iconHeight = imageData.height;
 		pixels = EditorUtils.initializePixels(imageData);
+		pixelLength = zoomUtils.getInitialZoom();
 
 		// Undo redo stacks
 		undoStack = new Stack<List<PixelItem>>();
@@ -305,7 +305,7 @@ public class IconsEditorPart extends EditorPart {
 		createCanvasKeyboardListeners();
 
 		// Force applyZoom to initialize pixel items
-		zoomUtils.applyZoom(ZoomUtils.ZOOM_INITIAL);
+		zoomUtils.applyZoom(zoomUtils.getInitialZoom());
 	}
 
 	private void createCanvasKeyboardListeners() {
