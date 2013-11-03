@@ -204,10 +204,15 @@
             id="org.eclipse_icons.editor.properties.samplePropertyPage"
             name="Image">
          <enabledWhen>
-            <test
-                  property="org.eclipse.core.resources.contentTypeId"
-                  value="org.eclipse_icons.editor.imageContentType">
-            </test>
+            <and>
+               <instanceof
+                     value="org.eclipse.core.resources.IFile">
+               </instanceof>
+               <test
+                     property="org.eclipse.core.resources.contentTypeId"
+                     value="org.eclipse_icons.editor.imageContentType">
+               </test>
+            </and>
          </enabledWhen>
       </page>
    </extension>
